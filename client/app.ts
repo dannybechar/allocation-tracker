@@ -455,6 +455,9 @@ async function showAllocationForm() {
     employeeSelect.appendChild(option);
   });
 
+  // Add event listener to auto-fill allocation percent with employee FTE
+  setupEmployeeSelectListener();
+
   // Populate target dropdown (default to clients)
   updateTargetDropdown();
 
@@ -484,6 +487,32 @@ function updateTargetDropdown() {
       targetSelect.appendChild(option);
     });
   }
+}
+
+// Setup employee select listener to auto-fill allocation percent with FTE
+function setupEmployeeSelectListener() {
+  const employeeSelect = document.getElementById('employeeSelect') as HTMLSelectElement;
+
+  // Remove existing listener by replacing with clone
+  const clone = employeeSelect.cloneNode(true) as HTMLSelectElement;
+  employeeSelect.parentNode?.replaceChild(clone, employeeSelect);
+
+  // Add change event listener to the new element
+  const newSelect = document.getElementById('employeeSelect') as HTMLSelectElement;
+  newSelect.addEventListener('change', () => {
+    const allocationPercentInput = document.getElementById('allocationPercent') as HTMLInputElement;
+    const selectedEmployeeId = Number(newSelect.value);
+
+    if (selectedEmployeeId) {
+      const employee = employeesCache.find((e) => e.id === selectedEmployeeId);
+      if (employee) {
+        // Only set the allocation percent if it's currently empty or default
+        if (!allocationPercentInput.value || allocationPercentInput.value === '0') {
+          allocationPercentInput.value = String(employee.fte_percent);
+        }
+      }
+    }
+  });
 }
 
 // Cancel allocation form
@@ -553,6 +582,32 @@ async function editAllocation(id: number) {
   const formTitle = document.getElementById('formTitle') as HTMLHeadingElement;
 
   try {
+    // Load employees, clients, projects if not already loaded
+    if (employeesCache.length === 0 || clientsCache.length === 0 || projectsCache.length === 0) {
+      const [employeesRes, clientsRes, projectsRes] = await Promise.all([
+        fetch('/api/employees'),
+        fetch('/api/clients'),
+        fetch('/api/projects'),
+      ]);
+
+      employeesCache = await employeesRes.json();
+      clientsCache = await clientsRes.json();
+      projectsCache = await projectsRes.json();
+    }
+
+    // Populate employee dropdown
+    const employeeSelect = document.getElementById('employeeSelect') as HTMLSelectElement;
+    employeeSelect.innerHTML = '<option value="">Select Employee</option>';
+    employeesCache.forEach((employee) => {
+      const option = document.createElement('option');
+      option.value = String(employee.id);
+      option.textContent = employee.name;
+      employeeSelect.appendChild(option);
+    });
+
+    // Add event listener to auto-fill allocation percent with employee FTE
+    setupEmployeeSelectListener();
+
     // Fetch current allocations
     const response = await fetch('/api/allocations');
     const allocations: Allocation[] = await response.json();
@@ -564,11 +619,9 @@ async function editAllocation(id: number) {
 
     // Populate form
     (document.getElementById('allocationId') as HTMLInputElement).value = String(allocation.id);
-    (document.getElementById('employeeSelect') as HTMLSelectElement).value = String(
-      allocation.employee_id
-    );
+    employeeSelect.value = String(allocation.employee_id);
 
-    // Set target type
+    // Set target type and populate target dropdown
     const targetTypeRadio = document.querySelector(
       `input[name="targetType"][value="${allocation.target_type}"]`
     ) as HTMLInputElement;
@@ -583,7 +636,7 @@ async function editAllocation(id: number) {
     (document.getElementById('allocationPercent') as HTMLInputElement).value = String(
       allocation.allocation_percent
     );
-    (document.getElementById('startDate') as HTMLInputElement).value = allocation.start_date;
+    (document.getElementById('startDate') as HTMLInputElement).value = allocation.start_date || '';
     (document.getElementById('endDate') as HTMLInputElement).value = allocation.end_date || '';
 
     formTitle.textContent = 'Edit Allocation';

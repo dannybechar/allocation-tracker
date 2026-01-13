@@ -359,6 +359,8 @@ async function showAllocationForm() {
         option.textContent = employee.name;
         employeeSelect.appendChild(option);
     });
+    // Add event listener to auto-fill allocation percent with employee FTE
+    setupEmployeeSelectListener();
     // Populate target dropdown (default to clients)
     updateTargetDropdown();
     formContainer.style.display = 'block';
@@ -385,6 +387,28 @@ function updateTargetDropdown() {
             targetSelect.appendChild(option);
         });
     }
+}
+// Setup employee select listener to auto-fill allocation percent with FTE
+function setupEmployeeSelectListener() {
+    const employeeSelect = document.getElementById('employeeSelect');
+    // Remove existing listener by replacing with clone
+    const clone = employeeSelect.cloneNode(true);
+    employeeSelect.parentNode?.replaceChild(clone, employeeSelect);
+    // Add change event listener to the new element
+    const newSelect = document.getElementById('employeeSelect');
+    newSelect.addEventListener('change', () => {
+        const allocationPercentInput = document.getElementById('allocationPercent');
+        const selectedEmployeeId = Number(newSelect.value);
+        if (selectedEmployeeId) {
+            const employee = employeesCache.find((e) => e.id === selectedEmployeeId);
+            if (employee) {
+                // Only set the allocation percent if it's currently empty or default
+                if (!allocationPercentInput.value || allocationPercentInput.value === '0') {
+                    allocationPercentInput.value = String(employee.fte_percent);
+                }
+            }
+        }
+    });
 }
 // Cancel allocation form
 function cancelAllocationForm() {
@@ -445,6 +469,28 @@ async function editAllocation(id) {
     const formContainer = document.getElementById('allocationFormContainer');
     const formTitle = document.getElementById('formTitle');
     try {
+        // Load employees, clients, projects if not already loaded
+        if (employeesCache.length === 0 || clientsCache.length === 0 || projectsCache.length === 0) {
+            const [employeesRes, clientsRes, projectsRes] = await Promise.all([
+                fetch('/api/employees'),
+                fetch('/api/clients'),
+                fetch('/api/projects'),
+            ]);
+            employeesCache = await employeesRes.json();
+            clientsCache = await clientsRes.json();
+            projectsCache = await projectsRes.json();
+        }
+        // Populate employee dropdown
+        const employeeSelect = document.getElementById('employeeSelect');
+        employeeSelect.innerHTML = '<option value="">Select Employee</option>';
+        employeesCache.forEach((employee) => {
+            const option = document.createElement('option');
+            option.value = String(employee.id);
+            option.textContent = employee.name;
+            employeeSelect.appendChild(option);
+        });
+        // Add event listener to auto-fill allocation percent with employee FTE
+        setupEmployeeSelectListener();
         // Fetch current allocations
         const response = await fetch('/api/allocations');
         const allocations = await response.json();
@@ -454,8 +500,8 @@ async function editAllocation(id) {
         }
         // Populate form
         document.getElementById('allocationId').value = String(allocation.id);
-        document.getElementById('employeeSelect').value = String(allocation.employee_id);
-        // Set target type
+        employeeSelect.value = String(allocation.employee_id);
+        // Set target type and populate target dropdown
         const targetTypeRadio = document.querySelector(`input[name="targetType"][value="${allocation.target_type}"]`);
         if (targetTypeRadio) {
             targetTypeRadio.checked = true;
@@ -463,7 +509,7 @@ async function editAllocation(id) {
         }
         document.getElementById('targetSelect').value = String(allocation.target_id);
         document.getElementById('allocationPercent').value = String(allocation.allocation_percent);
-        document.getElementById('startDate').value = allocation.start_date;
+        document.getElementById('startDate').value = allocation.start_date || '';
         document.getElementById('endDate').value = allocation.end_date || '';
         formTitle.textContent = 'Edit Allocation';
         formContainer.style.display = 'block';
