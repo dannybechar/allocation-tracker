@@ -7,6 +7,23 @@ interface AllocationException {
   source_projects_or_clients: string[];
 }
 
+interface Employee {
+  id: number;
+  name: string;
+  fte_percent: number;
+}
+
+interface Client {
+  id: number;
+  name: string;
+}
+
+interface Project {
+  id: number;
+  name: string;
+  client_id: number | null;
+}
+
 // Initialize date inputs with default values (today to today + 3 months)
 function initializeDates() {
   const today = new Date();
@@ -107,6 +124,198 @@ function hideError() {
   const error = document.getElementById('error') as HTMLDivElement;
   error.style.display = 'none';
 }
+
+// Tab switching
+function switchTab(tabName: string) {
+  // Hide all tab contents
+  const allTabs = document.querySelectorAll('.tab-content');
+  allTabs.forEach((tab) => {
+    tab.classList.remove('active');
+  });
+
+  // Remove active class from all nav tabs
+  const allNavTabs = document.querySelectorAll('.nav-tab');
+  allNavTabs.forEach((tab) => {
+    tab.classList.remove('active');
+  });
+
+  // Show selected tab content
+  const selectedTab = document.getElementById(`${tabName}Tab`);
+  if (selectedTab) {
+    selectedTab.classList.add('active');
+  }
+
+  // Add active class to clicked nav tab
+  const clickedNavTab = event?.target as HTMLElement;
+  if (clickedNavTab) {
+    clickedNavTab.classList.add('active');
+  }
+
+  // Load data for the selected tab
+  if (tabName === 'employees') {
+    loadEmployees();
+  } else if (tabName === 'clients') {
+    loadClients();
+  } else if (tabName === 'projects') {
+    loadProjects();
+  }
+}
+
+// Load employees
+async function loadEmployees() {
+  const table = document.getElementById('employeesTable') as HTMLTableElement;
+  const tbody = document.getElementById('employeesBody') as HTMLTableSectionElement;
+  const loading = document.getElementById('employeesLoading') as HTMLDivElement;
+  const error = document.getElementById('employeesError') as HTMLDivElement;
+  const noData = document.getElementById('employeesNoData') as HTMLDivElement;
+
+  // Hide everything
+  table.style.display = 'none';
+  error.style.display = 'none';
+  noData.style.display = 'none';
+  loading.style.display = 'block';
+
+  try {
+    const response = await fetch('/api/employees');
+    if (!response.ok) {
+      throw new Error('Failed to fetch employees');
+    }
+
+    const employees: Employee[] = await response.json();
+
+    // Clear existing rows
+    tbody.innerHTML = '';
+
+    if (employees.length === 0) {
+      noData.style.display = 'block';
+      return;
+    }
+
+    // Display employees
+    employees.forEach((employee) => {
+      const row = tbody.insertRow();
+      row.insertCell(0).textContent = String(employee.id);
+      row.insertCell(1).textContent = employee.name;
+      row.insertCell(2).textContent = `${employee.fte_percent}%`;
+    });
+
+    table.style.display = 'table';
+  } catch (err: any) {
+    error.textContent = err.message;
+    error.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+// Load clients
+async function loadClients() {
+  const table = document.getElementById('clientsTable') as HTMLTableElement;
+  const tbody = document.getElementById('clientsBody') as HTMLTableSectionElement;
+  const loading = document.getElementById('clientsLoading') as HTMLDivElement;
+  const error = document.getElementById('clientsError') as HTMLDivElement;
+  const noData = document.getElementById('clientsNoData') as HTMLDivElement;
+
+  // Hide everything
+  table.style.display = 'none';
+  error.style.display = 'none';
+  noData.style.display = 'none';
+  loading.style.display = 'block';
+
+  try {
+    const response = await fetch('/api/clients');
+    if (!response.ok) {
+      throw new Error('Failed to fetch clients');
+    }
+
+    const clients: Client[] = await response.json();
+
+    // Clear existing rows
+    tbody.innerHTML = '';
+
+    if (clients.length === 0) {
+      noData.style.display = 'block';
+      return;
+    }
+
+    // Display clients
+    clients.forEach((client) => {
+      const row = tbody.insertRow();
+      row.insertCell(0).textContent = String(client.id);
+      row.insertCell(1).textContent = client.name;
+    });
+
+    table.style.display = 'table';
+  } catch (err: any) {
+    error.textContent = err.message;
+    error.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+// Load projects
+async function loadProjects() {
+  const table = document.getElementById('projectsTable') as HTMLTableElement;
+  const tbody = document.getElementById('projectsBody') as HTMLTableSectionElement;
+  const loading = document.getElementById('projectsLoading') as HTMLDivElement;
+  const error = document.getElementById('projectsError') as HTMLDivElement;
+  const noData = document.getElementById('projectsNoData') as HTMLDivElement;
+
+  // Hide everything
+  table.style.display = 'none';
+  error.style.display = 'none';
+  noData.style.display = 'none';
+  loading.style.display = 'block';
+
+  try {
+    // Fetch both projects and clients to show client names
+    const [projectsResponse, clientsResponse] = await Promise.all([
+      fetch('/api/projects'),
+      fetch('/api/clients'),
+    ]);
+
+    if (!projectsResponse.ok || !clientsResponse.ok) {
+      throw new Error('Failed to fetch projects or clients');
+    }
+
+    const projects: Project[] = await projectsResponse.json();
+    const clients: Client[] = await clientsResponse.json();
+
+    // Create a map of client_id to client_name
+    const clientMap = new Map<number, string>();
+    clients.forEach((client) => {
+      clientMap.set(client.id, client.name);
+    });
+
+    // Clear existing rows
+    tbody.innerHTML = '';
+
+    if (projects.length === 0) {
+      noData.style.display = 'block';
+      return;
+    }
+
+    // Display projects
+    projects.forEach((project) => {
+      const row = tbody.insertRow();
+      row.insertCell(0).textContent = String(project.id);
+      row.insertCell(1).textContent = project.name;
+      const clientName = project.client_id ? clientMap.get(project.client_id) || '-' : '-';
+      row.insertCell(2).textContent = clientName;
+    });
+
+    table.style.display = 'table';
+  } catch (err: any) {
+    error.textContent = err.message;
+    error.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+// Make switchTab available globally
+(window as any).switchTab = switchTab;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {

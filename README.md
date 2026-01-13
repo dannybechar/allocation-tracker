@@ -111,15 +111,15 @@ The application supports importing employees, clients, and projects from Excel f
 
 1. **Edit or create** `data/employees.xlsx` with these columns:
    - Column A: ID (employee ID number)
-   - Column B: First Name
-   - Column C: Last Name
+   - Column B: Name (full name)
+   - Column C: FTE (FTE percentage, 0-100)
 
    Example:
    ```
-   | ID  | First Name | Last Name |
-   |-----|------------|-----------|
-   | 101 | John       | Doe       |
-   | 102 | Jane       | Smith     |
+   | ID  | Name       | FTE |
+   |-----|------------|-----|
+   | 101 | John Doe   | 100 |
+   | 102 | Jane Smith | 80  |
    ```
 
 2. **Run the import script**:
@@ -128,8 +128,7 @@ The application supports importing employees, clients, and projects from Excel f
    ```
 
 **Features:**
-- All employees are imported with 100% FTE
-- First and last names are combined into a single name field
+- Employees are imported with their specified FTE percentage
 - If an employee ID already exists, it will be updated (not duplicated)
 - The script provides a summary of inserted, updated, and any errors
 

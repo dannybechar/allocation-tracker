@@ -15,6 +15,44 @@
       color: #333;
     }
 
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 0;
+    }
+
+    .nav-tab {
+      padding: 10px 20px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      cursor: pointer;
+      color: #333;
+      font-weight: normal;
+    }
+
+    .nav-tab:hover {
+      background-color: #e9ecef;
+    }
+
+    .nav-tab.active {
+      background-color: white;
+      font-weight: bold;
+      border-bottom: 2px solid white;
+      margin-bottom: -2px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
     .filters {
       margin-bottom: 20px;
       padding: 15px;
@@ -98,40 +136,103 @@
   </style>
 </head>
 <body>
-  <h1>Allocation Tracker - Exceptions</h1>
+  <h1>Allocation Tracker</h1>
 
-  <div class="filters">
-    <label for="fromDate">From:</label>
-    <input type="date" id="fromDate">
-
-    <label for="toDate">To:</label>
-    <input type="date" id="toDate">
-
-    <button onclick="loadExceptions()">Refresh</button>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchTab('exceptions')">Exceptions</div>
+    <div class="nav-tab" onclick="switchTab('employees')">Employees</div>
+    <div class="nav-tab" onclick="switchTab('clients')">Clients</div>
+    <div class="nav-tab" onclick="switchTab('projects')">Projects</div>
   </div>
 
-  <div id="error" class="error" style="display: none;"></div>
+  <!-- Exceptions Tab -->
+  <div id="exceptionsTab" class="tab-content active">
+    <div class="filters">
+      <label for="fromDate">From:</label>
+      <input type="date" id="fromDate">
 
-  <div id="loading" class="loading" style="display: none;">Loading...</div>
+      <label for="toDate">To:</label>
+      <input type="date" id="toDate">
 
-  <div id="noData" class="no-data" style="display: none;">
-    No allocation exceptions found for the selected date range.
+      <button onclick="loadExceptions()">Refresh</button>
+    </div>
+
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div id="loading" class="loading" style="display: none;">Loading...</div>
+
+    <div id="noData" class="no-data" style="display: none;">
+      No allocation exceptions found for the selected date range.
+    </div>
+
+    <table id="exceptionsTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Type</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Free/Excess %</th>
+          <th>Sources</th>
+        </tr>
+      </thead>
+      <tbody id="exceptionsBody">
+      </tbody>
+    </table>
   </div>
 
-  <table id="exceptionsTable" style="display: none;">
-    <thead>
-      <tr>
-        <th>Employee</th>
-        <th>Type</th>
-        <th>Start Date</th>
-        <th>End Date</th>
-        <th>Free/Excess %</th>
-        <th>Sources</th>
-      </tr>
-    </thead>
-    <tbody id="exceptionsBody">
-    </tbody>
-  </table>
+  <!-- Employees Tab -->
+  <div id="employeesTab" class="tab-content">
+    <div id="employeesLoading" class="loading" style="display: none;">Loading employees...</div>
+    <div id="employeesError" class="error" style="display: none;"></div>
+    <div id="employeesNoData" class="no-data" style="display: none;">No employees found.</div>
+    <table id="employeesTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>FTE %</th>
+        </tr>
+      </thead>
+      <tbody id="employeesBody">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Clients Tab -->
+  <div id="clientsTab" class="tab-content">
+    <div id="clientsLoading" class="loading" style="display: none;">Loading clients...</div>
+    <div id="clientsError" class="error" style="display: none;"></div>
+    <div id="clientsNoData" class="no-data" style="display: none;">No clients found.</div>
+    <table id="clientsTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody id="clientsBody">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Projects Tab -->
+  <div id="projectsTab" class="tab-content">
+    <div id="projectsLoading" class="loading" style="display: none;">Loading projects...</div>
+    <div id="projectsError" class="error" style="display: none;"></div>
+    <div id="projectsNoData" class="no-data" style="display: none;">No projects found.</div>
+    <table id="projectsTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Client</th>
+        </tr>
+      </thead>
+      <tbody id="projectsBody">
+      </tbody>
+    </table>
+  </div>
 
   <script src="app.js"></script>
 </body>

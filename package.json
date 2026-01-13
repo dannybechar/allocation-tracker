@@ -15,7 +15,8 @@
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "import-employees": "ts-node scripts/import-employees.ts",
     "import-clients": "ts-node scripts/import-clients.ts",
-    "import-projects": "ts-node scripts/import-projects.ts"
+    "import-projects": "ts-node scripts/import-projects.ts",
+    "cleanup-test-data": "ts-node scripts/cleanup-test-data.ts"
   },
   "keywords": [
     "allocation",

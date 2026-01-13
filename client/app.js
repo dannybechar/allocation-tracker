@@ -81,6 +81,174 @@ function hideError() {
     const error = document.getElementById('error');
     error.style.display = 'none';
 }
+// Tab switching
+function switchTab(tabName) {
+    // Hide all tab contents
+    const allTabs = document.querySelectorAll('.tab-content');
+    allTabs.forEach((tab) => {
+        tab.classList.remove('active');
+    });
+    // Remove active class from all nav tabs
+    const allNavTabs = document.querySelectorAll('.nav-tab');
+    allNavTabs.forEach((tab) => {
+        tab.classList.remove('active');
+    });
+    // Show selected tab content
+    const selectedTab = document.getElementById(`${tabName}Tab`);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+    // Add active class to clicked nav tab
+    const clickedNavTab = event?.target;
+    if (clickedNavTab) {
+        clickedNavTab.classList.add('active');
+    }
+    // Load data for the selected tab
+    if (tabName === 'employees') {
+        loadEmployees();
+    }
+    else if (tabName === 'clients') {
+        loadClients();
+    }
+    else if (tabName === 'projects') {
+        loadProjects();
+    }
+}
+// Load employees
+async function loadEmployees() {
+    const table = document.getElementById('employeesTable');
+    const tbody = document.getElementById('employeesBody');
+    const loading = document.getElementById('employeesLoading');
+    const error = document.getElementById('employeesError');
+    const noData = document.getElementById('employeesNoData');
+    // Hide everything
+    table.style.display = 'none';
+    error.style.display = 'none';
+    noData.style.display = 'none';
+    loading.style.display = 'block';
+    try {
+        const response = await fetch('/api/employees');
+        if (!response.ok) {
+            throw new Error('Failed to fetch employees');
+        }
+        const employees = await response.json();
+        // Clear existing rows
+        tbody.innerHTML = '';
+        if (employees.length === 0) {
+            noData.style.display = 'block';
+            return;
+        }
+        // Display employees
+        employees.forEach((employee) => {
+            const row = tbody.insertRow();
+            row.insertCell(0).textContent = String(employee.id);
+            row.insertCell(1).textContent = employee.name;
+            row.insertCell(2).textContent = `${employee.fte_percent}%`;
+        });
+        table.style.display = 'table';
+    }
+    catch (err) {
+        error.textContent = err.message;
+        error.style.display = 'block';
+    }
+    finally {
+        loading.style.display = 'none';
+    }
+}
+// Load clients
+async function loadClients() {
+    const table = document.getElementById('clientsTable');
+    const tbody = document.getElementById('clientsBody');
+    const loading = document.getElementById('clientsLoading');
+    const error = document.getElementById('clientsError');
+    const noData = document.getElementById('clientsNoData');
+    // Hide everything
+    table.style.display = 'none';
+    error.style.display = 'none';
+    noData.style.display = 'none';
+    loading.style.display = 'block';
+    try {
+        const response = await fetch('/api/clients');
+        if (!response.ok) {
+            throw new Error('Failed to fetch clients');
+        }
+        const clients = await response.json();
+        // Clear existing rows
+        tbody.innerHTML = '';
+        if (clients.length === 0) {
+            noData.style.display = 'block';
+            return;
+        }
+        // Display clients
+        clients.forEach((client) => {
+            const row = tbody.insertRow();
+            row.insertCell(0).textContent = String(client.id);
+            row.insertCell(1).textContent = client.name;
+        });
+        table.style.display = 'table';
+    }
+    catch (err) {
+        error.textContent = err.message;
+        error.style.display = 'block';
+    }
+    finally {
+        loading.style.display = 'none';
+    }
+}
+// Load projects
+async function loadProjects() {
+    const table = document.getElementById('projectsTable');
+    const tbody = document.getElementById('projectsBody');
+    const loading = document.getElementById('projectsLoading');
+    const error = document.getElementById('projectsError');
+    const noData = document.getElementById('projectsNoData');
+    // Hide everything
+    table.style.display = 'none';
+    error.style.display = 'none';
+    noData.style.display = 'none';
+    loading.style.display = 'block';
+    try {
+        // Fetch both projects and clients to show client names
+        const [projectsResponse, clientsResponse] = await Promise.all([
+            fetch('/api/projects'),
+            fetch('/api/clients'),
+        ]);
+        if (!projectsResponse.ok || !clientsResponse.ok) {
+            throw new Error('Failed to fetch projects or clients');
+        }
+        const projects = await projectsResponse.json();
+        const clients = await clientsResponse.json();
+        // Create a map of client_id to client_name
+        const clientMap = new Map();
+        clients.forEach((client) => {
+            clientMap.set(client.id, client.name);
+        });
+        // Clear existing rows
+        tbody.innerHTML = '';
+        if (projects.length === 0) {
+            noData.style.display = 'block';
+            return;
+        }
+        // Display projects
+        projects.forEach((project) => {
+            const row = tbody.insertRow();
+            row.insertCell(0).textContent = String(project.id);
+            row.insertCell(1).textContent = project.name;
+            const clientName = project.client_id ? clientMap.get(project.client_id) || '-' : '-';
+            row.insertCell(2).textContent = clientName;
+        });
+        table.style.display = 'table';
+    }
+    catch (err) {
+        error.textContent = err.message;
+        error.style.display = 'block';
+    }
+    finally {
+        loading.style.display = 'none';
+    }
+}
+// Make switchTab available globally
+window.switchTab = switchTab;
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     initializeDates();

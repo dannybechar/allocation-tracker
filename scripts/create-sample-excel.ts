@@ -7,12 +7,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const sampleData = [
-  ['ID', 'First Name', 'Last Name'], // Header row
-  [101, 'John', 'Doe'],
-  [102, 'Jane', 'Smith'],
-  [103, 'Michael', 'Johnson'],
-  [104, 'Emily', 'Williams'],
-  [105, 'David', 'Brown'],
+  ['ID', 'Name', 'FTE'], // Header row
+  [101, 'John Doe', 100],
+  [102, 'Jane Smith', 80],
+  [103, 'Michael Johnson', 100],
+  [104, 'Emily Williams', 50],
+  [105, 'David Brown', 100],
 ];
 
 const worksheet = XLSX.utils.aoa_to_sheet(sampleData);
@@ -31,5 +31,5 @@ XLSX.writeFile(workbook, filePath);
 console.log(`✓ Created sample employees.xlsx file at ${filePath}`);
 console.log('Sample data:');
 sampleData.slice(1).forEach((row) => {
-  console.log(`  ID ${row[0]}: ${row[1]} ${row[2]}`);
+  console.log(`  ID ${row[0]}: ${row[1]} (${row[2]}% FTE)`);
 });

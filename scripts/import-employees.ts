@@ -2,8 +2,7 @@
  * Import Employees Script
  *
  * Reads employee data from employees.xlsx and imports into the database.
- * Excel format: ID, First Name, Last Name
- * Sets FTE to 100% for all employees.
+ * Excel format: ID, Name, FTE
  * Updates existing employees if ID matches.
  */
 
@@ -15,8 +14,8 @@ import * as fs from 'fs';
 
 interface EmployeeRow {
   id: number;
-  firstName: string;
-  lastName: string;
+  name: string;
+  fte: number;
 }
 
 async function importEmployees() {
@@ -36,14 +35,14 @@ async function importEmployees() {
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
-  // Convert to JSON
-  const data = XLSX.utils.sheet_to_json(worksheet, { header: ['id', 'firstName', 'lastName'] });
+  // Convert to JSON using first row as headers
+  const data = XLSX.utils.sheet_to_json(worksheet);
 
-  // Skip header row (first row)
-  const employees: EmployeeRow[] = data.slice(1).map((row: any) => ({
-    id: Number(row.id),
-    firstName: String(row.firstName || '').trim(),
-    lastName: String(row.lastName || '').trim(),
+  // Map to our employee structure
+  const employees: EmployeeRow[] = data.map((row: any) => ({
+    id: Number(row.ID),
+    name: String(row.Name || '').trim(),
+    fte: Number(row.FTE),
   }));
 
   if (employees.length === 0) {
@@ -70,14 +69,17 @@ async function importEmployees() {
         continue;
       }
 
-      if (!emp.firstName || !emp.lastName) {
+      if (!emp.name) {
         console.warn(`Skipping employee ID ${emp.id}: missing name`);
         errors++;
         continue;
       }
 
-      const fullName = `${emp.firstName} ${emp.lastName}`;
-      const ftePercent = 100; // Default to 100% as requested
+      if (isNaN(emp.fte) || emp.fte < 0 || emp.fte > 100) {
+        console.warn(`Skipping employee ID ${emp.id}: invalid FTE (${emp.fte})`);
+        errors++;
+        continue;
+      }
 
       // Check if employee exists
       const existing = await employeeRepo.findById(emp.id);
@@ -86,15 +88,15 @@ async function importEmployees() {
         // Update existing employee
         await db
           .prepare('UPDATE employees SET name = ?, fte_percent = ? WHERE id = ?')
-          .run(fullName, ftePercent, emp.id);
-        console.log(`✓ Updated: ID ${emp.id} - ${fullName}`);
+          .run(emp.name, emp.fte, emp.id);
+        console.log(`✓ Updated: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE)`);
         updated++;
       } else {
         // Insert new employee
         await db
           .prepare('INSERT INTO employees (id, name, fte_percent) VALUES (?, ?, ?)')
-          .run(emp.id, fullName, ftePercent);
-        console.log(`✓ Inserted: ID ${emp.id} - ${fullName}`);
+          .run(emp.id, emp.name, emp.fte);
+        console.log(`✓ Inserted: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE)`);
         inserted++;
       }
     } catch (error: any) {
