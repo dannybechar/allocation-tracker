@@ -103,13 +103,13 @@ Run tests with coverage:
 npm run test:coverage
 ```
 
-### Importing Employees from Excel
+### Importing Data from Excel
 
-You can import employee data from an Excel file:
+The application supports importing employees, clients, and projects from Excel files located in the `data/` directory.
 
-1. **Create an Excel file** named `employees.xlsx` in the project root directory
+#### Importing Employees
 
-2. **Format the Excel file** with these columns:
+1. **Edit or create** `data/employees.xlsx` with these columns:
    - Column A: ID (employee ID number)
    - Column B: First Name
    - Column C: Last Name
@@ -122,7 +122,7 @@ You can import employee data from an Excel file:
    | 102 | Jane       | Smith     |
    ```
 
-3. **Run the import script**:
+2. **Run the import script**:
    ```bash
    npm run import-employees
    ```
@@ -132,6 +132,48 @@ You can import employee data from an Excel file:
 - First and last names are combined into a single name field
 - If an employee ID already exists, it will be updated (not duplicated)
 - The script provides a summary of inserted, updated, and any errors
+
+#### Importing Clients
+
+1. **Edit or create** `data/clients.xlsx` with these columns:
+   - Column A: ID (client ID number)
+   - Column B: Name
+
+   Example:
+   ```
+   | ID  | Name           |
+   |-----|----------------|
+   | 1   | Acme Corp      |
+   | 2   | Tech Solutions |
+   ```
+
+2. **Run the import script**:
+   ```bash
+   npm run import-clients
+   ```
+
+#### Importing Projects
+
+1. **Edit or create** `data/projects.xlsx` with these columns:
+   - Column A: ID (project ID number)
+   - Column B: Name
+   - Column C: Client ID (optional - leave blank if project is not associated with a client)
+
+   Example:
+   ```
+   | ID  | Name              | Client ID |
+   |-----|-------------------|-----------|
+   | 1   | Website Redesign  | 1         |
+   | 2   | Mobile App        | 1         |
+   | 3   | Internal Tools    |           |
+   ```
+
+2. **Run the import script**:
+   ```bash
+   npm run import-projects
+   ```
+
+**Note:** Sample Excel files are included in the `data/` directory to help you get started.
 
 ### Linting and Formatting
 

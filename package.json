@@ -13,7 +13,9 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
-    "import-employees": "ts-node scripts/import-employees.ts"
+    "import-employees": "ts-node scripts/import-employees.ts",
+    "import-clients": "ts-node scripts/import-clients.ts",
+    "import-projects": "ts-node scripts/import-projects.ts"
   },
   "keywords": [
     "allocation",

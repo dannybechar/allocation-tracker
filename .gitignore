@@ -11,9 +11,6 @@ dist/
 *.sqlite
 *.sqlite3
 
-# Excel imports (user data)
-employees.xlsx
-
 # Environment variables
 .env
 .env.local

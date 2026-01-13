@@ -3,6 +3,8 @@
  */
 
 import * as XLSX from 'xlsx';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const sampleData = [
   ['ID', 'First Name', 'Last Name'], // Header row
@@ -17,9 +19,16 @@ const worksheet = XLSX.utils.aoa_to_sheet(sampleData);
 const workbook = XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
 
-XLSX.writeFile(workbook, 'employees.xlsx');
+// Ensure data directory exists
+const dataDir = path.join(process.cwd(), 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir);
+}
 
-console.log('✓ Created sample employees.xlsx file');
+const filePath = path.join(dataDir, 'employees.xlsx');
+XLSX.writeFile(workbook, filePath);
+
+console.log(`✓ Created sample employees.xlsx file at ${filePath}`);
 console.log('Sample data:');
 sampleData.slice(1).forEach((row) => {
   console.log(`  ID ${row[0]}: ${row[1]} ${row[2]}`);

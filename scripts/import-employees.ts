@@ -20,12 +20,12 @@ interface EmployeeRow {
 }
 
 async function importEmployees() {
-  const excelFilePath = path.join(process.cwd(), 'employees.xlsx');
+  const excelFilePath = path.join(process.cwd(), 'data', 'employees.xlsx');
 
   // Check if file exists
   if (!fs.existsSync(excelFilePath)) {
     console.error(`Error: employees.xlsx not found at ${excelFilePath}`);
-    console.error('Please create an employees.xlsx file in the project root directory.');
+    console.error('Please create an employees.xlsx file in the data/ directory.');
     process.exit(1);
   }
 
