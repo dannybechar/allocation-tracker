@@ -31,8 +31,8 @@ export interface Allocation {
   employee_id: number;
   target_type: TargetType;
   target_id: number;
-  start_date: Date;
-  end_date: Date | null; // null means ongoing
+  start_date: Date | null; // null means started indefinitely in the past
+  end_date: Date | null; // null means ongoing into future
   allocation_percent: number; // 0-100
 }
 

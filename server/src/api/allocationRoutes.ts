@@ -146,13 +146,15 @@ export function createAllocationRoutes(service: AllocationService): Router {
       }
 
       // Parse dates
-      let startDate: Date;
+      let startDate: Date | null = null;
       let endDate: Date | null = null;
 
-      try {
-        startDate = DateUtils.parseDate(start_date);
-      } catch {
-        return res.status(400).json({ error: 'Invalid start_date format. Expected YYYY-MM-DD' });
+      if (start_date !== null && start_date !== undefined) {
+        try {
+          startDate = DateUtils.parseDate(start_date);
+        } catch {
+          return res.status(400).json({ error: 'Invalid start_date format. Expected YYYY-MM-DD' });
+        }
       }
 
       if (end_date !== null && end_date !== undefined) {
@@ -175,7 +177,7 @@ export function createAllocationRoutes(service: AllocationService): Router {
       // Serialize dates
       const serialized = {
         ...allocation,
-        start_date: DateUtils.formatDate(allocation.start_date),
+        start_date: allocation.start_date ? DateUtils.formatDate(allocation.start_date) : null,
         end_date: allocation.end_date ? DateUtils.formatDate(allocation.end_date) : null,
       };
 
@@ -202,7 +204,7 @@ export function createAllocationRoutes(service: AllocationService): Router {
       // Serialize dates
       const serialized = allocations.map((a) => ({
         ...a,
-        start_date: DateUtils.formatDate(a.start_date),
+        start_date: a.start_date ? DateUtils.formatDate(a.start_date) : null,
         end_date: a.end_date ? DateUtils.formatDate(a.end_date) : null,
       }));
 
@@ -362,7 +364,7 @@ export function createAllocationRoutes(service: AllocationService): Router {
       // Serialize dates
       const serialized = {
         ...allocation,
-        start_date: DateUtils.formatDate(allocation.start_date),
+        start_date: allocation.start_date ? DateUtils.formatDate(allocation.start_date) : null,
         end_date: allocation.end_date ? DateUtils.formatDate(allocation.end_date) : null,
       };
 

@@ -92,7 +92,7 @@ export class AllocationService {
     employeeId: number,
     targetType: TargetType,
     targetId: number,
-    startDate: Date,
+    startDate: Date | null,
     endDate: Date | null,
     allocationPercent: number
   ): Promise<Allocation> {
@@ -101,7 +101,7 @@ export class AllocationService {
       throw new Error('Allocation percent must be between 0 and 100');
     }
 
-    if (endDate && startDate > endDate) {
+    if (startDate && endDate && startDate > endDate) {
       throw new Error('Start date must be before or equal to end date');
     }
 
@@ -192,7 +192,7 @@ export class AllocationService {
     employeeId?: number,
     targetType?: 'CLIENT' | 'PROJECT',
     targetId?: number,
-    startDate?: Date,
+    startDate?: Date | null,
     endDate?: Date | null,
     allocationPercent?: number
   ): Promise<Allocation> {

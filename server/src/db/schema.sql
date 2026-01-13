@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS allocations (
   employee_id INTEGER NOT NULL,
   target_type TEXT NOT NULL CHECK(target_type IN ('CLIENT', 'PROJECT')),
   target_id INTEGER NOT NULL,
-  start_date TEXT NOT NULL, -- ISO format: YYYY-MM-DD
-  end_date TEXT,            -- ISO format: YYYY-MM-DD, NULL means ongoing
+  start_date TEXT,          -- ISO format: YYYY-MM-DD, NULL means started indefinitely in the past
+  end_date TEXT,            -- ISO format: YYYY-MM-DD, NULL means ongoing into future
   allocation_percent INTEGER NOT NULL CHECK(allocation_percent >= 0 AND allocation_percent <= 100),
   FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 );

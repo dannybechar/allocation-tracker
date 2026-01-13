@@ -140,9 +140,9 @@ export class AllocationAnalyzer {
     changePointsSet.add(DateUtils.formatDate(window.from));
     changePointsSet.add(DateUtils.formatDate(DateUtils.addDays(window.to, 1)));
 
-    // Add allocation start dates
+    // Add allocation start dates (skip null start dates - they mean indefinite past)
     for (const allocation of allocations) {
-      if (allocation.start_date <= window.to) {
+      if (allocation.start_date && allocation.start_date <= window.to) {
         changePointsSet.add(DateUtils.formatDate(allocation.start_date));
       }
     }
@@ -176,7 +176,8 @@ export class AllocationAnalyzer {
       // Check if allocation is active during this interval
       // Allocation is active if it overlaps with [intervalStart, intervalEnd)
 
-      const allocationStart = allocation.start_date;
+      // Treat null start_date as "infinite past"
+      const allocationStart = allocation.start_date || new Date(1900, 0, 1);
       // Treat null end_date as "infinite future"
       const allocationEnd = allocation.end_date || new Date(9999, 11, 31);
 

@@ -399,7 +399,7 @@ async function loadAllocations() {
       row.insertCell(3).textContent = `${allocation.allocation_percent}%`;
 
       // Start date
-      row.insertCell(4).textContent = allocation.start_date;
+      row.insertCell(4).textContent = allocation.start_date || 'Indefinite';
 
       // End date
       row.insertCell(5).textContent = allocation.end_date || 'Ongoing';

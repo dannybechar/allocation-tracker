@@ -53,7 +53,7 @@ export class AllocationRepository implements IAllocationRepository {
         allocation.employee_id,
         allocation.target_type,
         allocation.target_id,
-        DateUtils.formatDate(allocation.start_date),
+        allocation.start_date ? DateUtils.formatDate(allocation.start_date) : null,
         allocation.end_date ? DateUtils.formatDate(allocation.end_date) : null,
         allocation.allocation_percent
       );
@@ -85,7 +85,7 @@ export class AllocationRepository implements IAllocationRepository {
 
     if (allocation.start_date !== undefined) {
       fields.push('start_date = ?');
-      values.push(DateUtils.formatDate(allocation.start_date));
+      values.push(allocation.start_date ? DateUtils.formatDate(allocation.start_date) : null);
     }
 
     if (allocation.end_date !== undefined) {
