@@ -504,7 +504,7 @@ async function saveAllocation(event: Event) {
   const allocationPercent = Number(
     (document.getElementById('allocationPercent') as HTMLInputElement).value
   );
-  const startDate = (document.getElementById('startDate') as HTMLInputElement).value;
+  const startDate = (document.getElementById('startDate') as HTMLInputElement).value || null;
   const endDate = (document.getElementById('endDate') as HTMLInputElement).value || null;
 
   try {

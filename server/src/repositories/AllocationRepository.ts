@@ -25,13 +25,15 @@ export class AllocationRepository implements IAllocationRepository {
 
   async findByDateRange(fromDate: Date, toDate: Date): Promise<Allocation[]> {
     // Query: allocations that overlap with [fromDate, toDate]
-    // Overlap logic: start_date <= toDate AND (end_date IS NULL OR end_date >= fromDate)
+    // Overlap logic: (start_date IS NULL OR start_date <= toDate) AND (end_date IS NULL OR end_date >= fromDate)
+    // NULL start_date means "started indefinitely in the past"
+    // NULL end_date means "ongoing into future"
 
     const rows = this.db
       .prepare(
         `
       SELECT * FROM allocations
-      WHERE start_date <= ?
+      WHERE (start_date IS NULL OR start_date <= ?)
         AND (end_date IS NULL OR end_date >= ?)
     `
       )
@@ -125,7 +127,7 @@ export class AllocationRepository implements IAllocationRepository {
       employee_id: row.employee_id,
       target_type: row.target_type as TargetType,
       target_id: row.target_id,
-      start_date: DateUtils.parseDate(row.start_date),
+      start_date: row.start_date ? DateUtils.parseDate(row.start_date) : null,
       end_date: row.end_date ? DateUtils.parseDate(row.end_date) : null,
       allocation_percent: row.allocation_percent,
     };

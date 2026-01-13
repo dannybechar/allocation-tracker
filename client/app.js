@@ -400,7 +400,7 @@ async function saveAllocation(event) {
         .value;
     const targetId = Number(document.getElementById('targetSelect').value);
     const allocationPercent = Number(document.getElementById('allocationPercent').value);
-    const startDate = document.getElementById('startDate').value;
+    const startDate = document.getElementById('startDate').value || null;
     const endDate = document.getElementById('endDate').value || null;
     try {
         const body = {
