@@ -149,7 +149,7 @@ export function createAllocationRoutes(service: AllocationService): Router {
       let startDate: Date | null = null;
       let endDate: Date | null = null;
 
-      if (start_date !== null && start_date !== undefined) {
+      if (start_date !== null && start_date !== undefined && start_date !== '') {
         try {
           startDate = DateUtils.parseDate(start_date);
         } catch {
@@ -157,7 +157,7 @@ export function createAllocationRoutes(service: AllocationService): Router {
         }
       }
 
-      if (end_date !== null && end_date !== undefined) {
+      if (end_date !== null && end_date !== undefined && end_date !== '') {
         try {
           endDate = DateUtils.parseDate(end_date);
         } catch {
@@ -328,19 +328,23 @@ export function createAllocationRoutes(service: AllocationService): Router {
       }
 
       // Parse dates if provided
-      let startDate: Date | undefined;
+      let startDate: Date | null | undefined;
       let endDate: Date | null | undefined;
 
       if (start_date !== undefined) {
-        try {
-          startDate = DateUtils.parseDate(start_date);
-        } catch {
-          return res.status(400).json({ error: 'Invalid start_date format. Expected YYYY-MM-DD' });
+        if (start_date === null || start_date === '') {
+          startDate = null;
+        } else {
+          try {
+            startDate = DateUtils.parseDate(start_date);
+          } catch {
+            return res.status(400).json({ error: 'Invalid start_date format. Expected YYYY-MM-DD' });
+          }
         }
       }
 
       if (end_date !== undefined) {
-        if (end_date === null) {
+        if (end_date === null || end_date === '') {
           endDate = null;
         } else {
           try {
