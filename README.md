@@ -103,6 +103,36 @@ Run tests with coverage:
 npm run test:coverage
 ```
 
+### Importing Employees from Excel
+
+You can import employee data from an Excel file:
+
+1. **Create an Excel file** named `employees.xlsx` in the project root directory
+
+2. **Format the Excel file** with these columns:
+   - Column A: ID (employee ID number)
+   - Column B: First Name
+   - Column C: Last Name
+
+   Example:
+   ```
+   | ID  | First Name | Last Name |
+   |-----|------------|-----------|
+   | 101 | John       | Doe       |
+   | 102 | Jane       | Smith     |
+   ```
+
+3. **Run the import script**:
+   ```bash
+   npm run import-employees
+   ```
+
+**Features:**
+- All employees are imported with 100% FTE
+- First and last names are combined into a single name field
+- If an employee ID already exists, it will be updated (not duplicated)
+- The script provides a summary of inserted, updated, and any errors
+
 ### Linting and Formatting
 
 Lint the code:
