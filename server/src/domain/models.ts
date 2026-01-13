@@ -10,6 +10,7 @@ export interface Employee {
   id: number;
   name: string;
   fte_percent: number; // 0-100
+  vacation_days: number; // Can be decimal (e.g., 2.5)
 }
 
 export interface Client {

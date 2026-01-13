@@ -16,6 +16,7 @@ interface EmployeeRow {
   id: number;
   name: string;
   fte: number;
+  vacationDays: number;
 }
 
 async function importEmployees() {
@@ -43,6 +44,7 @@ async function importEmployees() {
     id: Number(row.ID),
     name: String(row.Name || '').trim(),
     fte: Number(row.FTE),
+    vacationDays: row.VacationDays !== undefined ? Number(row.VacationDays) : 0,
   }));
 
   if (employees.length === 0) {
@@ -87,16 +89,16 @@ async function importEmployees() {
       if (existing) {
         // Update existing employee
         await db
-          .prepare('UPDATE employees SET name = ?, fte_percent = ? WHERE id = ?')
-          .run(emp.name, emp.fte, emp.id);
-        console.log(`✓ Updated: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE)`);
+          .prepare('UPDATE employees SET name = ?, fte_percent = ?, vacation_days = ? WHERE id = ?')
+          .run(emp.name, emp.fte, emp.vacationDays, emp.id);
+        console.log(`✓ Updated: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE, ${emp.vacationDays} vacation days)`);
         updated++;
       } else {
         // Insert new employee
         await db
-          .prepare('INSERT INTO employees (id, name, fte_percent) VALUES (?, ?, ?)')
-          .run(emp.id, emp.name, emp.fte);
-        console.log(`✓ Inserted: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE)`);
+          .prepare('INSERT INTO employees (id, name, fte_percent, vacation_days) VALUES (?, ?, ?, ?)')
+          .run(emp.id, emp.name, emp.fte, emp.vacationDays);
+        console.log(`✓ Inserted: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE, ${emp.vacationDays} vacation days)`);
         inserted++;
       }
     } catch (error: any) {

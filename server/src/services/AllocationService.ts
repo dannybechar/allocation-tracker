@@ -75,7 +75,7 @@ export class AllocationService {
       throw new Error('FTE percent must be between 0 and 100');
     }
 
-    return this.employeeRepo.create({ name, fte_percent: ftePercent });
+    return this.employeeRepo.create({ name, fte_percent: ftePercent, vacation_days: 0 });
   }
 
   /**

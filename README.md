@@ -110,17 +110,24 @@ The application supports importing employees, clients, and projects from Excel f
 #### Importing Employees
 
 1. **Edit or create** `data/employees.xlsx` with these columns:
-   - Column A: ID (employee ID number)
-   - Column B: Name (full name)
-   - Column C: FTE (FTE percentage, 0-100)
+   - Column A (ID): Employee ID number
+   - Column D (Name): Full employee name
+   - Column G (FTE): FTE percentage (0-100)
+   - Column H (VacationDays): Vacation days balance (optional, can be decimal like 2.5)
 
    Example:
    ```
-   | ID  | Name       | FTE |
-   |-----|------------|-----|
-   | 101 | John Doe   | 100 |
-   | 102 | Jane Smith | 80  |
+   | ID  | Name       | FTE | VacationDays |
+   |-----|------------|-----|--------------|
+   | 101 | John Doe   | 100 | 15.5         |
+   | 102 | Jane Smith | 80  | 12           |
    ```
+
+   **Note:** The actual Excel file has more columns (EmployeeType, EmployeeId, Manager, Email). The import script reads:
+   - Column A: ID
+   - Column D: Name
+   - Column G: FTE
+   - Column H: VacationDays (defaults to 0 if not present)
 
 2. **Run the import script**:
    ```bash
@@ -128,7 +135,9 @@ The application supports importing employees, clients, and projects from Excel f
    ```
 
 **Features:**
-- Employees are imported with their specified FTE percentage
+- Employees are imported with their specified FTE percentage and vacation days
+- Vacation days can be decimal values (e.g., 2.5 days)
+- If VacationDays column is missing, defaults to 0
 - If an employee ID already exists, it will be updated (not duplicated)
 - The script provides a summary of inserted, updated, and any errors
 
@@ -241,7 +250,7 @@ The application uses SQLite for local data storage. The database file is created
 
 ### Schema
 
-- **employees**: id, name, fte_percent (0-100)
+- **employees**: id, name, fte_percent (0-100), vacation_days (decimal, e.g., 2.5)
 - **clients**: id, name
 - **projects**: id, client_id (nullable), name
 - **allocations**: id, employee_id, target_type, target_id, start_date, end_date (nullable), allocation_percent (0-100)

@@ -144,6 +144,7 @@ async function loadEmployees() {
             row.insertCell(0).textContent = String(employee.id);
             row.insertCell(1).textContent = employee.name;
             row.insertCell(2).textContent = `${employee.fte_percent}%`;
+            row.insertCell(3).textContent = String(employee.vacation_days);
         });
         table.style.display = 'table';
     }
