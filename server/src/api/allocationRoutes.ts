@@ -288,5 +288,124 @@ export function createAllocationRoutes(service: AllocationService): Router {
     }
   });
 
+  /**
+   * PUT /api/allocations/:id
+   * Update an existing allocation
+   */
+  router.put('/allocations/:id', async (req: Request, res: Response) => {
+    try {
+      const allocationId = Number(req.params.id);
+      const {
+        employee_id,
+        target_type,
+        target_id,
+        start_date,
+        end_date,
+        allocation_percent,
+      } = req.body;
+
+      if (isNaN(allocationId)) {
+        return res.status(400).json({ error: 'Invalid allocation ID' });
+      }
+
+      // Validation
+      if (employee_id !== undefined && typeof employee_id !== 'number') {
+        return res.status(400).json({ error: 'employee_id must be a number' });
+      }
+
+      if (target_type !== undefined && target_type !== 'CLIENT' && target_type !== 'PROJECT') {
+        return res.status(400).json({ error: 'target_type must be CLIENT or PROJECT' });
+      }
+
+      if (target_id !== undefined && typeof target_id !== 'number') {
+        return res.status(400).json({ error: 'target_id must be a number' });
+      }
+
+      if (allocation_percent !== undefined && typeof allocation_percent !== 'number') {
+        return res.status(400).json({ error: 'allocation_percent must be a number' });
+      }
+
+      // Parse dates if provided
+      let startDate: Date | undefined;
+      let endDate: Date | null | undefined;
+
+      if (start_date !== undefined) {
+        try {
+          startDate = DateUtils.parseDate(start_date);
+        } catch {
+          return res.status(400).json({ error: 'Invalid start_date format. Expected YYYY-MM-DD' });
+        }
+      }
+
+      if (end_date !== undefined) {
+        if (end_date === null) {
+          endDate = null;
+        } else {
+          try {
+            endDate = DateUtils.parseDate(end_date);
+          } catch {
+            return res.status(400).json({ error: 'Invalid end_date format. Expected YYYY-MM-DD' });
+          }
+        }
+      }
+
+      const allocation = await service.updateAllocation(
+        allocationId,
+        employee_id,
+        target_type,
+        target_id,
+        startDate,
+        endDate,
+        allocation_percent
+      );
+
+      // Serialize dates
+      const serialized = {
+        ...allocation,
+        start_date: DateUtils.formatDate(allocation.start_date),
+        end_date: allocation.end_date ? DateUtils.formatDate(allocation.end_date) : null,
+      };
+
+      res.json(serialized);
+    } catch (error: any) {
+      console.error('Error updating allocation:', error);
+
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ error: error.message });
+      }
+
+      if (error.message.includes('must be')) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  /**
+   * DELETE /api/allocations/:id
+   * Delete an allocation
+   */
+  router.delete('/allocations/:id', async (req: Request, res: Response) => {
+    try {
+      const allocationId = Number(req.params.id);
+
+      if (isNaN(allocationId)) {
+        return res.status(400).json({ error: 'Invalid allocation ID' });
+      }
+
+      await service.deleteAllocation(allocationId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deleting allocation:', error);
+
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ error: error.message });
+      }
+
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   return router;
 }

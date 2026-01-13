@@ -183,4 +183,77 @@ export class AllocationService {
   async getAllProjects(): Promise<Project[]> {
     return this.projectRepo.findAll();
   }
+
+  /**
+   * Update an existing allocation
+   */
+  async updateAllocation(
+    id: number,
+    employeeId?: number,
+    targetType?: 'CLIENT' | 'PROJECT',
+    targetId?: number,
+    startDate?: Date,
+    endDate?: Date | null,
+    allocationPercent?: number
+  ): Promise<Allocation> {
+    // Verify allocation exists
+    const existing = await this.allocationRepo.findById(id);
+    if (!existing) {
+      throw new Error(`Allocation with id ${id} not found`);
+    }
+
+    // Verify employee exists if being updated
+    if (employeeId !== undefined) {
+      const employee = await this.employeeRepo.findById(employeeId);
+      if (!employee) {
+        throw new Error(`Employee with id ${employeeId} not found`);
+      }
+    }
+
+    // Verify target exists if being updated
+    if (targetType !== undefined && targetId !== undefined) {
+      if (targetType === 'CLIENT') {
+        const client = await this.clientRepo.findById(targetId);
+        if (!client) {
+          throw new Error(`Client with id ${targetId} not found`);
+        }
+      } else if (targetType === 'PROJECT') {
+        const project = await this.projectRepo.findById(targetId);
+        if (!project) {
+          throw new Error(`Project with id ${targetId} not found`);
+        }
+      }
+    }
+
+    // Validation
+    if (allocationPercent !== undefined && (allocationPercent < 0 || allocationPercent > 100)) {
+      throw new Error('Allocation percent must be between 0 and 100');
+    }
+
+    if (startDate && endDate && startDate > endDate) {
+      throw new Error('Start date must be before or equal to end date');
+    }
+
+    // Build update object
+    const updates: Partial<Allocation> = {};
+    if (employeeId !== undefined) updates.employee_id = employeeId;
+    if (targetType !== undefined) updates.target_type = targetType;
+    if (targetId !== undefined) updates.target_id = targetId;
+    if (startDate !== undefined) updates.start_date = startDate;
+    if (endDate !== undefined) updates.end_date = endDate;
+    if (allocationPercent !== undefined) updates.allocation_percent = allocationPercent;
+
+    return this.allocationRepo.update(id, updates);
+  }
+
+  /**
+   * Delete an allocation
+   */
+  async deleteAllocation(id: number): Promise<void> {
+    const existing = await this.allocationRepo.findById(id);
+    if (!existing) {
+      throw new Error(`Allocation with id ${id} not found`);
+    }
+    return this.allocationRepo.delete(id);
+  }
 }
