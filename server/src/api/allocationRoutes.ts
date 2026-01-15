@@ -64,11 +64,11 @@ export function createAllocationRoutes(service: AllocationService): Router {
 
   /**
    * POST /api/employees
-   * Body: { name: string, fte_percent: number }
+   * Body: { name: string, fte_percent: number, role_type?: string }
    */
   router.post('/employees', async (req: Request, res: Response) => {
     try {
-      const { name, fte_percent } = req.body;
+      const { name, fte_percent, role_type } = req.body;
 
       if (!name || typeof name !== 'string') {
         return res.status(400).json({ error: 'name is required and must be a string' });
@@ -78,7 +78,11 @@ export function createAllocationRoutes(service: AllocationService): Router {
         return res.status(400).json({ error: 'fte_percent is required and must be a number' });
       }
 
-      const employee = await service.createEmployee(name, fte_percent);
+      if (role_type !== undefined && typeof role_type !== 'string') {
+        return res.status(400).json({ error: 'role_type must be a string' });
+      }
+
+      const employee = await service.createEmployee(name, fte_percent, role_type);
 
       res.status(201).json(employee);
     } catch (error: any) {
@@ -102,6 +106,61 @@ export function createAllocationRoutes(service: AllocationService): Router {
       res.json(employees);
     } catch (error) {
       console.error('Error fetching employees:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  /**
+   * PUT /api/employees/:id
+   * Update an existing employee
+   * Body: { name?: string, fte_percent?: number, vacation_days?: number, role_type?: string }
+   */
+  router.put('/employees/:id', async (req: Request, res: Response) => {
+    try {
+      const employeeId = Number(req.params.id);
+      const { name, fte_percent, vacation_days, role_type } = req.body;
+
+      if (isNaN(employeeId)) {
+        return res.status(400).json({ error: 'Invalid employee ID' });
+      }
+
+      // Validation
+      if (name !== undefined && (typeof name !== 'string' || name.trim().length === 0)) {
+        return res.status(400).json({ error: 'name must be a non-empty string' });
+      }
+
+      if (fte_percent !== undefined && typeof fte_percent !== 'number') {
+        return res.status(400).json({ error: 'fte_percent must be a number' });
+      }
+
+      if (vacation_days !== undefined && typeof vacation_days !== 'number') {
+        return res.status(400).json({ error: 'vacation_days must be a number' });
+      }
+
+      if (role_type !== undefined && typeof role_type !== 'string') {
+        return res.status(400).json({ error: 'role_type must be a string' });
+      }
+
+      const employee = await service.updateEmployee(
+        employeeId,
+        name,
+        fte_percent,
+        vacation_days,
+        role_type
+      );
+
+      res.json(employee);
+    } catch (error: any) {
+      console.error('Error updating employee:', error);
+
+      if (error.message.includes('not found')) {
+        return res.status(404).json({ error: error.message });
+      }
+
+      if (error.message.includes('must be')) {
+        return res.status(400).json({ error: error.message });
+      }
+
       res.status(500).json({ error: 'Internal server error' });
     }
   });

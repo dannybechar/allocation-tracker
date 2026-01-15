@@ -19,6 +19,7 @@ import {
   Client,
   Project,
   TargetType,
+  RoleType,
 } from '../domain/models';
 import { DateUtils } from '../domain/DateUtils';
 
@@ -43,12 +44,15 @@ export class AllocationService {
     const to = toDate || DateUtils.addMonths(from, 3);
 
     // Fetch all necessary data
-    const [employees, allocations, clients, projects] = await Promise.all([
+    const [allEmployees, allocations, clients, projects] = await Promise.all([
       this.employeeRepo.findAll(),
       this.allocationRepo.findByDateRange(from, to),
       this.clientRepo.findAll(),
       this.projectRepo.findAll(),
     ]);
+
+    // Filter out G&A employees from exceptions calculation
+    const employees = allEmployees.filter(emp => emp.role_type !== 'G&A');
 
     // Delegate to domain layer
     const input: AllocationAnalysisInput = {
@@ -66,7 +70,7 @@ export class AllocationService {
   /**
    * Create a new employee
    */
-  async createEmployee(name: string, ftePercent: number): Promise<Employee> {
+  async createEmployee(name: string, ftePercent: number, roleType: RoleType = 'Developer'): Promise<Employee> {
     // Validation
     if (!name || name.trim().length === 0) {
       throw new Error('Employee name is required');
@@ -75,7 +79,7 @@ export class AllocationService {
       throw new Error('FTE percent must be between 0 and 100');
     }
 
-    return this.employeeRepo.create({ name, fte_percent: ftePercent, vacation_days: 0 });
+    return this.employeeRepo.create({ name, fte_percent: ftePercent, vacation_days: 0, role_type: roleType });
   }
 
   /**
@@ -83,6 +87,41 @@ export class AllocationService {
    */
   async getAllEmployees(): Promise<Employee[]> {
     return this.employeeRepo.findAll();
+  }
+
+  /**
+   * Update an existing employee
+   */
+  async updateEmployee(
+    id: number,
+    name?: string,
+    ftePercent?: number,
+    vacationDays?: number,
+    roleType?: RoleType
+  ): Promise<Employee> {
+    // Verify employee exists
+    const existing = await this.employeeRepo.findById(id);
+    if (!existing) {
+      throw new Error(`Employee with id ${id} not found`);
+    }
+
+    // Validation
+    if (ftePercent !== undefined && (ftePercent < 0 || ftePercent > 100)) {
+      throw new Error('FTE percent must be between 0 and 100');
+    }
+
+    if (name !== undefined && (!name || name.trim().length === 0)) {
+      throw new Error('Employee name cannot be empty');
+    }
+
+    // Build update object
+    const updates: Partial<Employee> = {};
+    if (name !== undefined) updates.name = name;
+    if (ftePercent !== undefined) updates.fte_percent = ftePercent;
+    if (vacationDays !== undefined) updates.vacation_days = vacationDays;
+    if (roleType !== undefined) updates.role_type = roleType;
+
+    return this.employeeRepo.update(id, updates);
   }
 
   /**

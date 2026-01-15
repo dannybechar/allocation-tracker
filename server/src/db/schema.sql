@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS employees (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   fte_percent INTEGER NOT NULL CHECK(fte_percent >= 0 AND fte_percent <= 100),
-  vacation_days REAL DEFAULT 0
+  vacation_days REAL DEFAULT 0,
+  role_type TEXT NOT NULL DEFAULT 'Developer' CHECK(role_type IN ('Developer', 'Team Leader', 'Group Leader', 'G&A'))
 );
 
 -- Client table

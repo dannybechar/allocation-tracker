@@ -150,8 +150,22 @@ async function loadEmployees() {
             const row = tbody.insertRow();
             row.insertCell(0).textContent = String(employee.id);
             row.insertCell(1).textContent = employee.name;
-            row.insertCell(2).textContent = `${employee.fte_percent}%`;
-            row.insertCell(3).textContent = String(employee.vacation_days);
+            // Role type dropdown
+            const roleCell = row.insertCell(2);
+            const roleSelect = document.createElement('select');
+            roleSelect.style.cssText = 'padding: 5px; border: 1px solid #ddd; border-radius: 3px; width: 100%;';
+            roleSelect.innerHTML = `
+        <option value="Developer" ${employee.role_type === 'Developer' ? 'selected' : ''}>Developer</option>
+        <option value="Team Leader" ${employee.role_type === 'Team Leader' ? 'selected' : ''}>Team Leader</option>
+        <option value="Group Leader" ${employee.role_type === 'Group Leader' ? 'selected' : ''}>Group Leader</option>
+        <option value="G&A" ${employee.role_type === 'G&A' ? 'selected' : ''}>G&A</option>
+      `;
+            roleSelect.onchange = async () => {
+                await updateEmployeeRole(employee.id, roleSelect.value);
+            };
+            roleCell.appendChild(roleSelect);
+            row.insertCell(3).textContent = `${employee.fte_percent}%`;
+            row.insertCell(4).textContent = String(employee.vacation_days);
         });
         table.style.display = 'table';
     }
@@ -161,6 +175,30 @@ async function loadEmployees() {
     }
     finally {
         loading.style.display = 'none';
+    }
+}
+// Update employee role type
+async function updateEmployeeRole(employeeId, newRoleType) {
+    try {
+        const response = await fetch(`/api/employees/${employeeId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role_type: newRoleType }),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update role');
+        }
+        // Update cache
+        const employee = employeesCache.find((e) => e.id === employeeId);
+        if (employee) {
+            employee.role_type = newRoleType;
+        }
+    }
+    catch (err) {
+        alert(`Error updating role: ${err.message}`);
+        // Reload to revert the dropdown
+        await loadEmployees();
     }
 }
 // Load clients
