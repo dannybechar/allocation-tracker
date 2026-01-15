@@ -6,14 +6,12 @@
  */
 
 // Core domain entities
-export type RoleType = 'Developer' | 'Team Leader' | 'Group Leader' | 'G&A';
-
 export interface Employee {
   id: number;
   name: string;
   fte_percent: number; // 0-100
   vacation_days: number; // Can be decimal (e.g., 2.5)
-  role_type: RoleType;
+  billable: boolean; // true = billable, false = non-billable
 }
 
 export interface Client {

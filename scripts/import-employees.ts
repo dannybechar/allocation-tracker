@@ -17,6 +17,7 @@ interface EmployeeRow {
   name: string;
   fte: number;
   vacationDays: number;
+  billable: boolean;
 }
 
 async function importEmployees() {
@@ -45,6 +46,7 @@ async function importEmployees() {
     name: String(row.Name || '').trim(),
     fte: Number(row.FTE),
     vacationDays: row.VacationDays !== undefined ? Number(row.VacationDays) : 0,
+    billable: row.Billable !== undefined ? Boolean(row.Billable) : true, // Default to billable if not specified
   }));
 
   if (employees.length === 0) {
@@ -89,16 +91,16 @@ async function importEmployees() {
       if (existing) {
         // Update existing employee
         await db
-          .prepare('UPDATE employees SET name = ?, fte_percent = ?, vacation_days = ? WHERE id = ?')
-          .run(emp.name, emp.fte, emp.vacationDays, emp.id);
-        console.log(`✓ Updated: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE, ${emp.vacationDays} vacation days)`);
+          .prepare('UPDATE employees SET name = ?, fte_percent = ?, vacation_days = ?, billable = ? WHERE id = ?')
+          .run(emp.name, emp.fte, emp.vacationDays, emp.billable ? 1 : 0, emp.id);
+        console.log(`✓ Updated: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE, ${emp.vacationDays} vacation days, ${emp.billable ? 'billable' : 'non-billable'})`);
         updated++;
       } else {
         // Insert new employee
         await db
-          .prepare('INSERT INTO employees (id, name, fte_percent, vacation_days) VALUES (?, ?, ?, ?)')
-          .run(emp.id, emp.name, emp.fte, emp.vacationDays);
-        console.log(`✓ Inserted: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE, ${emp.vacationDays} vacation days)`);
+          .prepare('INSERT INTO employees (id, name, fte_percent, vacation_days, billable) VALUES (?, ?, ?, ?, ?)')
+          .run(emp.id, emp.name, emp.fte, emp.vacationDays, emp.billable ? 1 : 0);
+        console.log(`✓ Inserted: ID ${emp.id} - ${emp.name} (${emp.fte}% FTE, ${emp.vacationDays} vacation days, ${emp.billable ? 'billable' : 'non-billable'})`);
         inserted++;
       }
     } catch (error: any) {

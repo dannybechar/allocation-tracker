@@ -17,8 +17,8 @@ export class EmployeeRepository implements IEmployeeRepository {
 
   async create(employee: Omit<Employee, 'id'>): Promise<Employee> {
     const result = this.db
-      .prepare('INSERT INTO employees (name, fte_percent, vacation_days, role_type) VALUES (?, ?, ?, ?)')
-      .run(employee.name, employee.fte_percent, employee.vacation_days, employee.role_type);
+      .prepare('INSERT INTO employees (name, fte_percent, vacation_days, billable) VALUES (?, ?, ?, ?)')
+      .run(employee.name, employee.fte_percent, employee.vacation_days, employee.billable ? 1 : 0);
 
     return {
       id: result.lastInsertRowid as number,
@@ -45,9 +45,9 @@ export class EmployeeRepository implements IEmployeeRepository {
       values.push(employee.vacation_days);
     }
 
-    if (employee.role_type !== undefined) {
-      fields.push('role_type = ?');
-      values.push(employee.role_type);
+    if (employee.billable !== undefined) {
+      fields.push('billable = ?');
+      values.push(employee.billable ? 1 : 0);
     }
 
     if (fields.length === 0) {
@@ -77,7 +77,7 @@ export class EmployeeRepository implements IEmployeeRepository {
       name: row.name,
       fte_percent: row.fte_percent,
       vacation_days: row.vacation_days || 0,
-      role_type: row.role_type,
+      billable: row.billable === 1,
     };
   }
 }

@@ -19,7 +19,6 @@ import {
   Client,
   Project,
   TargetType,
-  RoleType,
 } from '../domain/models';
 import { DateUtils } from '../domain/DateUtils';
 
@@ -51,8 +50,8 @@ export class AllocationService {
       this.projectRepo.findAll(),
     ]);
 
-    // Filter out G&A employees from exceptions calculation
-    const employees = allEmployees.filter(emp => emp.role_type !== 'G&A');
+    // Filter out non-billable employees from exceptions calculation
+    const employees = allEmployees.filter(emp => emp.billable);
 
     // Delegate to domain layer
     const input: AllocationAnalysisInput = {
@@ -70,7 +69,7 @@ export class AllocationService {
   /**
    * Create a new employee
    */
-  async createEmployee(name: string, ftePercent: number, roleType: RoleType = 'Developer'): Promise<Employee> {
+  async createEmployee(name: string, ftePercent: number, billable: boolean = true): Promise<Employee> {
     // Validation
     if (!name || name.trim().length === 0) {
       throw new Error('Employee name is required');
@@ -79,7 +78,7 @@ export class AllocationService {
       throw new Error('FTE percent must be between 0 and 100');
     }
 
-    return this.employeeRepo.create({ name, fte_percent: ftePercent, vacation_days: 0, role_type: roleType });
+    return this.employeeRepo.create({ name, fte_percent: ftePercent, vacation_days: 0, billable });
   }
 
   /**
@@ -97,7 +96,7 @@ export class AllocationService {
     name?: string,
     ftePercent?: number,
     vacationDays?: number,
-    roleType?: RoleType
+    billable?: boolean
   ): Promise<Employee> {
     // Verify employee exists
     const existing = await this.employeeRepo.findById(id);
@@ -119,7 +118,7 @@ export class AllocationService {
     if (name !== undefined) updates.name = name;
     if (ftePercent !== undefined) updates.fte_percent = ftePercent;
     if (vacationDays !== undefined) updates.vacation_days = vacationDays;
-    if (roleType !== undefined) updates.role_type = roleType;
+    if (billable !== undefined) updates.billable = billable;
 
     return this.employeeRepo.update(id, updates);
   }

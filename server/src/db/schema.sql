@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS employees (
   name TEXT NOT NULL,
   fte_percent INTEGER NOT NULL CHECK(fte_percent >= 0 AND fte_percent <= 100),
   vacation_days REAL DEFAULT 0,
-  role_type TEXT NOT NULL DEFAULT 'Developer' CHECK(role_type IN ('Developer', 'Team Leader', 'Group Leader', 'G&A'))
+  billable INTEGER NOT NULL DEFAULT 1 CHECK(billable IN (0, 1))
 );
 
 -- Client table

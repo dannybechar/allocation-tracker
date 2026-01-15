@@ -64,11 +64,11 @@ export function createAllocationRoutes(service: AllocationService): Router {
 
   /**
    * POST /api/employees
-   * Body: { name: string, fte_percent: number, role_type?: string }
+   * Body: { name: string, fte_percent: number, billable?: boolean }
    */
   router.post('/employees', async (req: Request, res: Response) => {
     try {
-      const { name, fte_percent, role_type } = req.body;
+      const { name, fte_percent, billable } = req.body;
 
       if (!name || typeof name !== 'string') {
         return res.status(400).json({ error: 'name is required and must be a string' });
@@ -78,11 +78,11 @@ export function createAllocationRoutes(service: AllocationService): Router {
         return res.status(400).json({ error: 'fte_percent is required and must be a number' });
       }
 
-      if (role_type !== undefined && typeof role_type !== 'string') {
-        return res.status(400).json({ error: 'role_type must be a string' });
+      if (billable !== undefined && typeof billable !== 'boolean') {
+        return res.status(400).json({ error: 'billable must be a boolean' });
       }
 
-      const employee = await service.createEmployee(name, fte_percent, role_type);
+      const employee = await service.createEmployee(name, fte_percent, billable);
 
       res.status(201).json(employee);
     } catch (error: any) {
@@ -113,12 +113,12 @@ export function createAllocationRoutes(service: AllocationService): Router {
   /**
    * PUT /api/employees/:id
    * Update an existing employee
-   * Body: { name?: string, fte_percent?: number, vacation_days?: number, role_type?: string }
+   * Body: { name?: string, fte_percent?: number, vacation_days?: number, billable?: boolean }
    */
   router.put('/employees/:id', async (req: Request, res: Response) => {
     try {
       const employeeId = Number(req.params.id);
-      const { name, fte_percent, vacation_days, role_type } = req.body;
+      const { name, fte_percent, vacation_days, billable } = req.body;
 
       if (isNaN(employeeId)) {
         return res.status(400).json({ error: 'Invalid employee ID' });
@@ -137,8 +137,8 @@ export function createAllocationRoutes(service: AllocationService): Router {
         return res.status(400).json({ error: 'vacation_days must be a number' });
       }
 
-      if (role_type !== undefined && typeof role_type !== 'string') {
-        return res.status(400).json({ error: 'role_type must be a string' });
+      if (billable !== undefined && typeof billable !== 'boolean') {
+        return res.status(400).json({ error: 'billable must be a boolean' });
       }
 
       const employee = await service.updateEmployee(
@@ -146,7 +146,7 @@ export function createAllocationRoutes(service: AllocationService): Router {
         name,
         fte_percent,
         vacation_days,
-        role_type
+        billable
       );
 
       res.json(employee);
