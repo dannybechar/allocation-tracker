@@ -408,48 +408,94 @@ async function loadAllocations() {
     // Clear existing rows
     tbody.innerHTML = '';
 
-    if (allocations.length === 0) {
+    // Get only billable employees
+    const billableEmployees = employeesCache.filter((e) => e.billable);
+
+    if (billableEmployees.length === 0) {
       noData.style.display = 'block';
       return;
     }
 
-    // Display allocations
+    // Group allocations by employee
+    const allocationsByEmployee = new Map<number, Allocation[]>();
     allocations.forEach((allocation) => {
-      const row = tbody.insertRow();
-
-      // Employee name
-      const employee = employeesCache.find((e) => e.id === allocation.employee_id);
-      row.insertCell(0).textContent = employee ? employee.name : `ID ${allocation.employee_id}`;
-
-      // Target type
-      row.insertCell(1).textContent = allocation.target_type;
-
-      // Target name
-      let targetName = '';
-      if (allocation.target_type === 'CLIENT') {
-        const client = clientsCache.find((c) => c.id === allocation.target_id);
-        targetName = client ? client.name : `ID ${allocation.target_id}`;
-      } else {
-        const project = projectsCache.find((p) => p.id === allocation.target_id);
-        targetName = project ? project.name : `ID ${allocation.target_id}`;
+      if (!allocationsByEmployee.has(allocation.employee_id)) {
+        allocationsByEmployee.set(allocation.employee_id, []);
       }
-      row.insertCell(2).textContent = targetName;
+      allocationsByEmployee.get(allocation.employee_id)!.push(allocation);
+    });
 
-      // Allocation %
-      row.insertCell(3).textContent = `${allocation.allocation_percent}%`;
+    // Display each billable employee
+    billableEmployees.forEach((employee) => {
+      const employeeAllocations = allocationsByEmployee.get(employee.id) || [];
 
-      // Start date
-      row.insertCell(4).textContent = allocation.start_date || 'Indefinite';
+      if (employeeAllocations.length > 0) {
+        // Employee has allocations - show them
+        employeeAllocations.forEach((allocation) => {
+          const row = tbody.insertRow();
 
-      // End date
-      row.insertCell(5).textContent = allocation.end_date || 'Ongoing';
+          // Employee name
+          row.insertCell(0).textContent = employee.name;
 
-      // Actions
-      const actionsCell = row.insertCell(6);
-      actionsCell.innerHTML = `
-        <button onclick="editAllocation(${allocation.id})" style="padding: 5px 10px; margin-right: 5px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">Edit</button>
-        <button onclick="deleteAllocation(${allocation.id})" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Delete</button>
-      `;
+          // Target type
+          row.insertCell(1).textContent = allocation.target_type;
+
+          // Target name
+          let targetName = '';
+          if (allocation.target_type === 'CLIENT') {
+            const client = clientsCache.find((c) => c.id === allocation.target_id);
+            targetName = client ? client.name : `ID ${allocation.target_id}`;
+          } else {
+            const project = projectsCache.find((p) => p.id === allocation.target_id);
+            targetName = project ? project.name : `ID ${allocation.target_id}`;
+          }
+          row.insertCell(2).textContent = targetName;
+
+          // Allocation %
+          row.insertCell(3).textContent = `${allocation.allocation_percent}%`;
+
+          // Start date
+          row.insertCell(4).textContent = allocation.start_date || 'Indefinite';
+
+          // End date
+          row.insertCell(5).textContent = allocation.end_date || 'Ongoing';
+
+          // Actions
+          const actionsCell = row.insertCell(6);
+          actionsCell.innerHTML = `
+            <button onclick="editAllocation(${allocation.id})" style="padding: 5px 10px; margin-right: 5px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">Edit</button>
+            <button onclick="deleteAllocation(${allocation.id})" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Delete</button>
+          `;
+        });
+      } else {
+        // Employee has no allocations - show placeholder row
+        const row = tbody.insertRow();
+        row.style.backgroundColor = '#f8f9fa';
+
+        // Employee name
+        row.insertCell(0).textContent = employee.name;
+
+        // Target type - empty
+        row.insertCell(1).textContent = '-';
+
+        // Target name - empty
+        row.insertCell(2).textContent = '-';
+
+        // Allocation % - pre-fill with FTE%
+        row.insertCell(3).textContent = `${employee.fte_percent}%`;
+
+        // Start date - empty
+        row.insertCell(4).textContent = '-';
+
+        // End date - empty
+        row.insertCell(5).textContent = '-';
+
+        // Actions - Add button
+        const actionsCell = row.insertCell(6);
+        actionsCell.innerHTML = `
+          <button onclick="addAllocationForEmployee(${employee.id})" style="padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">Add Allocation</button>
+        `;
+      }
     });
 
     table.style.display = 'table';
@@ -499,6 +545,59 @@ async function showAllocationForm() {
   setupEmployeeSelectListener();
 
   // Populate target dropdown (default to clients)
+  updateTargetDropdown();
+
+  formContainer.style.display = 'block';
+}
+
+// Add allocation for a specific employee (from placeholder row)
+async function addAllocationForEmployee(employeeId: number) {
+  const formContainer = document.getElementById('allocationFormContainer') as HTMLDivElement;
+  const formTitle = document.getElementById('formTitle') as HTMLHeadingElement;
+  const form = document.getElementById('allocationForm') as HTMLFormElement;
+
+  // Reset form
+  form.reset();
+  (document.getElementById('allocationId') as HTMLInputElement).value = '';
+  formTitle.textContent = 'Add New Allocation';
+
+  // Load data if not already loaded
+  if (employeesCache.length === 0 || clientsCache.length === 0 || projectsCache.length === 0) {
+    const [employeesRes, clientsRes, projectsRes] = await Promise.all([
+      fetch('/api/employees'),
+      fetch('/api/clients'),
+      fetch('/api/projects'),
+    ]);
+
+    employeesCache = await employeesRes.json();
+    clientsCache = await clientsRes.json();
+    projectsCache = await projectsRes.json();
+  }
+
+  // Populate employee dropdown
+  const employeeSelect = document.getElementById('employeeSelect') as HTMLSelectElement;
+  employeeSelect.innerHTML = '<option value="">Select Employee</option>';
+  employeesCache.forEach((employee) => {
+    const option = document.createElement('option');
+    option.value = String(employee.id);
+    option.textContent = employee.name;
+    employeeSelect.appendChild(option);
+  });
+
+  // Pre-select the employee
+  employeeSelect.value = String(employeeId);
+
+  // Pre-fill allocation percent with employee's FTE%
+  const employee = employeesCache.find((e) => e.id === employeeId);
+  if (employee) {
+    const allocationPercentInput = document.getElementById('allocationPercent') as HTMLInputElement;
+    allocationPercentInput.value = String(employee.fte_percent);
+  }
+
+  // Setup employee select listener
+  setupEmployeeSelectListener();
+
+  // Populate target dropdown
   updateTargetDropdown();
 
   formContainer.style.display = 'block';
