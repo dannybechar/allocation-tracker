@@ -49,9 +49,9 @@ export class AllocationAnalyzer {
       exceptions.push(...employeeExceptions);
     }
 
-    // Sort by start date
+    // Sort by end date
     exceptions.sort(
-      (a, b) => a.exception_start_date.getTime() - b.exception_start_date.getTime()
+      (a, b) => a.exception_end_date.getTime() - b.exception_end_date.getTime()
     );
 
     return exceptions;
