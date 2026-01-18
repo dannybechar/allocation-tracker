@@ -75,7 +75,13 @@ function displayExceptions(exceptions) {
         row.insertCell(0).textContent = exception.employee_name;
         row.insertCell(1).textContent = exception.exception_type;
         row.insertCell(2).textContent = exception.availability_date;
-        row.insertCell(3).textContent = `${exception.free_or_excess_percent}%`;
+        // For VACATION exceptions, Free/Excess % field is not applicable
+        if (exception.exception_type === 'VACATION') {
+            row.insertCell(3).textContent = '-';
+        }
+        else {
+            row.insertCell(3).textContent = `${exception.free_or_excess_percent}%`;
+        }
         row.insertCell(4).textContent = String(exception.vacation_days);
         row.insertCell(5).textContent = exception.source_projects_or_clients.join(', ') || '-';
     });
