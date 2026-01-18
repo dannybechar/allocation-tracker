@@ -58,8 +58,16 @@ function displayExceptions(exceptions) {
     noData.style.display = 'none';
     exceptions.forEach((exception) => {
         const row = tbody.insertRow();
-        row.className =
-            exception.exception_type === 'UNDER' ? 'exception-under' : 'exception-over';
+        // Apply color coding based on exception type and availability
+        if (exception.exception_type === 'OVER') {
+            row.className = 'exception-over'; // Red - Over-allocated
+        }
+        else if (exception.source_projects_or_clients.length > 0) {
+            row.className = 'exception-allocated'; // Blue - Currently allocated, will become available
+        }
+        else {
+            row.className = 'exception-free'; // Green - Available now
+        }
         row.insertCell(0).textContent = exception.employee_name;
         row.insertCell(1).textContent = exception.exception_type;
         row.insertCell(2).textContent = exception.availability_date;
