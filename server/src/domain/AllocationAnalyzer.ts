@@ -34,7 +34,7 @@ export class AllocationAnalyzer {
     const exceptions: AllocationException[] = [];
 
     for (const employee of input.employees) {
-      // Only generate allocation exceptions for billable employees
+      // Only generate exceptions for billable employees
       if (employee.billable) {
         const employeeAllocations = input.allocations.filter(
           (a) => a.employee_id === employee.id
@@ -49,20 +49,20 @@ export class AllocationAnalyzer {
         );
 
         exceptions.push(...employeeExceptions);
-      }
 
-      // Add vacation exception for ALL employees (billable and non-billable) with >8 days
-      if (employee.vacation_days > 8) {
-        exceptions.push({
-          employee_name: employee.name,
-          exception_type: 'VACATION',
-          exception_start_date: input.fromDate,
-          exception_end_date: input.toDate,
-          free_or_excess_percent: employee.vacation_days,
-          source_projects_or_clients: [],
-          availability_date: input.fromDate, // Vacation is immediate
-          vacation_days: employee.vacation_days,
-        });
+        // Add vacation exception for billable employees with >8 days
+        if (employee.vacation_days > 8) {
+          exceptions.push({
+            employee_name: employee.name,
+            exception_type: 'VACATION',
+            exception_start_date: input.fromDate,
+            exception_end_date: input.toDate,
+            free_or_excess_percent: employee.vacation_days,
+            source_projects_or_clients: [],
+            availability_date: input.fromDate, // Vacation is immediate
+            vacation_days: employee.vacation_days,
+          });
+        }
       }
     }
 
