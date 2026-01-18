@@ -64,12 +64,38 @@ export class AllocationAnalyzer {
     });
 
     // Add availability_date to each exception
-    return exceptions.map(exception => ({
-      ...exception,
-      availability_date: this.spansApproximatelyFullWindow(exception, input.fromDate, input.toDate)
-        ? exception.exception_start_date  // Already free as of window start
-        : exception.exception_end_date    // Will be free at end date
-    }));
+    return exceptions.map(exception => {
+      // For UNDER exceptions with no sources (no current allocation):
+      //   - If exception ends near query window end: show start (when they became free)
+      //   - Otherwise: show end (when they become more available)
+      // For UNDER exceptions with sources (currently allocated):
+      //   - Show end date (when allocation ends)
+      // For OVER exceptions: show end date
+
+      let availabilityDate: Date;
+
+      if (exception.exception_type === 'UNDER' && exception.source_projects_or_clients.length === 0) {
+        // No current allocation
+        // Check if exception extends to near the end of the query window
+        const endsNearWindowEnd = this.datesAreClose(exception.exception_end_date, input.toDate);
+
+        if (endsNearWindowEnd) {
+          // Exception extends through query window - show when they became free
+          availabilityDate = exception.exception_start_date;
+        } else {
+          // Exception ends before window end - show when they become more available
+          availabilityDate = exception.exception_end_date;
+        }
+      } else {
+        // Currently allocated (has sources) or OVER exception - show when allocation ends
+        availabilityDate = exception.exception_end_date;
+      }
+
+      return {
+        ...exception,
+        availability_date: availabilityDate
+      };
+    });
   }
 
   /**
@@ -397,6 +423,15 @@ export class AllocationAnalyzer {
     const tolerance = 2 * 24 * 60 * 60 * 1000;
 
     return startDiff <= tolerance && endDiff <= tolerance;
+  }
+
+  /**
+   * Checks if two dates are close (within 2 days tolerance)
+   */
+  private datesAreClose(date1: Date, date2: Date): boolean {
+    const diff = Math.abs(date1.getTime() - date2.getTime());
+    const tolerance = 2 * 24 * 60 * 60 * 1000; // 2 days in milliseconds
+    return diff <= tolerance;
   }
 
   /**
