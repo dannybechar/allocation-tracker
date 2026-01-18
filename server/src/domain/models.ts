@@ -38,7 +38,7 @@ export interface Allocation {
 }
 
 // Exception types
-export type ExceptionType = 'UNDER' | 'OVER';
+export type ExceptionType = 'UNDER' | 'OVER' | 'VACATION';
 
 export interface AllocationException {
   employee_name: string;
@@ -48,6 +48,7 @@ export interface AllocationException {
   free_or_excess_percent: number;
   source_projects_or_clients: string[]; // Human-readable names
   availability_date: Date; // When employee becomes/is available (end_date for allocated, start_date for free)
+  vacation_days: number; // Employee's vacation days balance
 }
 
 // Input for analyzer

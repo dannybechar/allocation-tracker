@@ -1,11 +1,12 @@
 interface AllocationException {
   employee_name: string;
-  exception_type: 'UNDER' | 'OVER';
+  exception_type: 'UNDER' | 'OVER' | 'VACATION';
   exception_start_date: string;
   exception_end_date: string;
   free_or_excess_percent: number;
   source_projects_or_clients: string[];
   availability_date: string;
+  vacation_days: number;
 }
 
 interface Employee {
@@ -112,7 +113,9 @@ function displayExceptions(exceptions: AllocationException[]) {
     const row = tbody.insertRow();
 
     // Apply color coding based on exception type and availability
-    if (exception.exception_type === 'OVER') {
+    if (exception.exception_type === 'VACATION') {
+      row.className = 'exception-vacation'; // Yellow - High vacation balance
+    } else if (exception.exception_type === 'OVER') {
       row.className = 'exception-over'; // Red - Over-allocated
     } else if (exception.source_projects_or_clients.length > 0) {
       row.className = 'exception-allocated'; // Blue - Currently allocated, will become available
@@ -124,7 +127,8 @@ function displayExceptions(exceptions: AllocationException[]) {
     row.insertCell(1).textContent = exception.exception_type;
     row.insertCell(2).textContent = exception.availability_date;
     row.insertCell(3).textContent = `${exception.free_or_excess_percent}%`;
-    row.insertCell(4).textContent = exception.source_projects_or_clients.join(', ') || '-';
+    row.insertCell(4).textContent = String(exception.vacation_days);
+    row.insertCell(5).textContent = exception.source_projects_or_clients.join(', ') || '-';
   });
 }
 

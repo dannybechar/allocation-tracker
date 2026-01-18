@@ -54,6 +54,7 @@ export function createAllocationRoutes(service: AllocationService): Router {
         free_or_excess_percent: ex.free_or_excess_percent,
         source_projects_or_clients: ex.source_projects_or_clients,
         availability_date: DateUtils.formatDate(ex.availability_date),
+        vacation_days: ex.vacation_days,
       }));
 
       res.json(serialized);

@@ -43,17 +43,14 @@ export class AllocationService {
     const to = toDate || DateUtils.addMonths(from, 3);
 
     // Fetch all necessary data
-    const [allEmployees, allocations, clients, projects] = await Promise.all([
+    const [employees, allocations, clients, projects] = await Promise.all([
       this.employeeRepo.findAll(),
       this.allocationRepo.findByDateRange(from, to),
       this.clientRepo.findAll(),
       this.projectRepo.findAll(),
     ]);
 
-    // Filter out non-billable employees from exceptions calculation
-    const employees = allEmployees.filter(emp => emp.billable);
-
-    // Delegate to domain layer
+    // Delegate to domain layer (analyzer will filter billable for allocation exceptions)
     const input: AllocationAnalysisInput = {
       employees,
       allocations,

@@ -59,7 +59,10 @@ function displayExceptions(exceptions) {
     exceptions.forEach((exception) => {
         const row = tbody.insertRow();
         // Apply color coding based on exception type and availability
-        if (exception.exception_type === 'OVER') {
+        if (exception.exception_type === 'VACATION') {
+            row.className = 'exception-vacation'; // Yellow - High vacation balance
+        }
+        else if (exception.exception_type === 'OVER') {
             row.className = 'exception-over'; // Red - Over-allocated
         }
         else if (exception.source_projects_or_clients.length > 0) {
@@ -72,7 +75,8 @@ function displayExceptions(exceptions) {
         row.insertCell(1).textContent = exception.exception_type;
         row.insertCell(2).textContent = exception.availability_date;
         row.insertCell(3).textContent = `${exception.free_or_excess_percent}%`;
-        row.insertCell(4).textContent = exception.source_projects_or_clients.join(', ') || '-';
+        row.insertCell(4).textContent = String(exception.vacation_days);
+        row.insertCell(5).textContent = exception.source_projects_or_clients.join(', ') || '-';
     });
 }
 function showLoading() {

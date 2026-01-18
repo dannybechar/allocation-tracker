@@ -34,19 +34,36 @@ export class AllocationAnalyzer {
     const exceptions: AllocationException[] = [];
 
     for (const employee of input.employees) {
-      const employeeAllocations = input.allocations.filter(
-        (a) => a.employee_id === employee.id
-      );
+      // Only generate allocation exceptions for billable employees
+      if (employee.billable) {
+        const employeeAllocations = input.allocations.filter(
+          (a) => a.employee_id === employee.id
+        );
 
-      const employeeExceptions = this.analyzeEmployee(
-        employee,
-        employeeAllocations,
-        new DateRange(input.fromDate, input.toDate),
-        input.clients,
-        input.projects
-      );
+        const employeeExceptions = this.analyzeEmployee(
+          employee,
+          employeeAllocations,
+          new DateRange(input.fromDate, input.toDate),
+          input.clients,
+          input.projects
+        );
 
-      exceptions.push(...employeeExceptions);
+        exceptions.push(...employeeExceptions);
+      }
+
+      // Add vacation exception for ALL employees (billable and non-billable) with >8 days
+      if (employee.vacation_days > 8) {
+        exceptions.push({
+          employee_name: employee.name,
+          exception_type: 'VACATION',
+          exception_start_date: input.fromDate,
+          exception_end_date: input.toDate,
+          free_or_excess_percent: employee.vacation_days,
+          source_projects_or_clients: [],
+          availability_date: input.fromDate, // Vacation is immediate
+          vacation_days: employee.vacation_days,
+        });
+      }
     }
 
     // Sort exceptions: full-window exceptions first (currently free employees),
@@ -65,6 +82,7 @@ export class AllocationAnalyzer {
 
     // Add availability_date to each exception
     const exceptionsWithAvailability = exceptions.map(exception => {
+      // For VACATION exceptions: always show start date (immediate attention needed)
       // For UNDER exceptions with no sources (no current allocation):
       //   - If exception ends near query window end: show start (when they became free)
       //   - Otherwise: show end (when they become more available)
@@ -74,7 +92,10 @@ export class AllocationAnalyzer {
 
       let availabilityDate: Date;
 
-      if (exception.exception_type === 'UNDER' && exception.source_projects_or_clients.length === 0) {
+      if (exception.exception_type === 'VACATION') {
+        // Vacation exceptions are immediate - show start date
+        availabilityDate = exception.exception_start_date;
+      } else if (exception.exception_type === 'UNDER' && exception.source_projects_or_clients.length === 0) {
         // No current allocation
         // Check if exception extends to near the end of the query window
         const endsNearWindowEnd = this.datesAreClose(exception.exception_end_date, input.toDate);
@@ -97,14 +118,30 @@ export class AllocationAnalyzer {
       };
     });
 
-    // Deduplicate by employee name, keeping earliest availability date
+    // Deduplicate by employee name, prioritizing allocation exceptions over vacation exceptions
     const employeeExceptionMap = new Map<string, AllocationException>();
 
     for (const exception of exceptionsWithAvailability) {
       const existing = employeeExceptionMap.get(exception.employee_name);
 
-      if (!existing || exception.availability_date < existing.availability_date) {
+      if (!existing) {
+        // No existing exception, add this one
         employeeExceptionMap.set(exception.employee_name, exception);
+      } else {
+        // Prioritize allocation exceptions (UNDER/OVER) over vacation exceptions
+        const isAllocationException = exception.exception_type === 'UNDER' || exception.exception_type === 'OVER';
+        const existingIsAllocationException = existing.exception_type === 'UNDER' || existing.exception_type === 'OVER';
+
+        if (isAllocationException && !existingIsAllocationException) {
+          // Replace vacation exception with allocation exception
+          employeeExceptionMap.set(exception.employee_name, exception);
+        } else if (isAllocationException && existingIsAllocationException) {
+          // Both are allocation exceptions, keep earliest availability
+          if (exception.availability_date < existing.availability_date) {
+            employeeExceptionMap.set(exception.employee_name, exception);
+          }
+        }
+        // If current is vacation and existing is allocation, keep existing
       }
     }
 
@@ -184,8 +221,8 @@ export class AllocationAnalyzer {
     // Step 4: Merge contiguous intervals
     const mergedExceptions = this.mergeContiguousExceptions(transformedExceptions);
 
-    // Step 5: Resolve source names and add temporary availability_date
-    // (will be overwritten in analyze() method)
+    // Step 5: Resolve source names and add temporary availability_date and vacation_days
+    // (availability_date will be recalculated in analyze() method)
     return mergedExceptions.map((ex) => ({
       ...ex,
       source_projects_or_clients: this.resolveSourceNames(
@@ -194,6 +231,7 @@ export class AllocationAnalyzer {
         projects
       ),
       availability_date: ex.exception_end_date, // Temporary, will be recalculated
+      vacation_days: employee.vacation_days,
     }));
   }
 
