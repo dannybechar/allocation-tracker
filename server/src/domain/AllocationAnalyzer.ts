@@ -64,7 +64,7 @@ export class AllocationAnalyzer {
     });
 
     // Add availability_date to each exception
-    return exceptions.map(exception => {
+    const exceptionsWithAvailability = exceptions.map(exception => {
       // For UNDER exceptions with no sources (no current allocation):
       //   - If exception ends near query window end: show start (when they became free)
       //   - Otherwise: show end (when they become more available)
@@ -96,6 +96,22 @@ export class AllocationAnalyzer {
         availability_date: availabilityDate
       };
     });
+
+    // Deduplicate by employee name, keeping earliest availability date
+    const employeeExceptionMap = new Map<string, AllocationException>();
+
+    for (const exception of exceptionsWithAvailability) {
+      const existing = employeeExceptionMap.get(exception.employee_name);
+
+      if (!existing || exception.availability_date < existing.availability_date) {
+        employeeExceptionMap.set(exception.employee_name, exception);
+      }
+    }
+
+    // Convert back to array and sort by availability date
+    return Array.from(employeeExceptionMap.values()).sort(
+      (a, b) => a.availability_date.getTime() - b.availability_date.getTime()
+    );
   }
 
   /**
