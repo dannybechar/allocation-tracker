@@ -66,9 +66,24 @@ export class AllocationAnalyzer {
       }
     }
 
-    // Sort exceptions: full-window exceptions first (currently free employees),
-    // then by end date (employees who will become free soon)
+    // Sort exceptions:
+    // 1. Allocation exceptions (UNDER/OVER) sorted by availability
+    // 2. Vacation exceptions last (no specific order)
     exceptions.sort((a, b) => {
+      const aIsVacation = a.exception_type === 'VACATION';
+      const bIsVacation = b.exception_type === 'VACATION';
+
+      // Vacation exceptions always come last
+      if (aIsVacation && !bIsVacation) return 1;
+      if (!aIsVacation && bIsVacation) return -1;
+
+      // Both are vacation or both are allocation exceptions
+      if (aIsVacation && bIsVacation) {
+        // Both vacation - no specific order (or by name if needed)
+        return 0;
+      }
+
+      // Both are allocation exceptions - sort by availability
       const aSpansFullWindow = this.spansApproximatelyFullWindow(a, input.fromDate, input.toDate);
       const bSpansFullWindow = this.spansApproximatelyFullWindow(b, input.fromDate, input.toDate);
 
@@ -145,10 +160,18 @@ export class AllocationAnalyzer {
       }
     }
 
-    // Convert back to array and sort by availability date
-    return Array.from(employeeExceptionMap.values()).sort(
-      (a, b) => a.availability_date.getTime() - b.availability_date.getTime()
-    );
+    // Convert back to array and sort (VACATION exceptions last, others by availability)
+    return Array.from(employeeExceptionMap.values()).sort((a, b) => {
+      const aIsVacation = a.exception_type === 'VACATION';
+      const bIsVacation = b.exception_type === 'VACATION';
+
+      // VACATION exceptions always last
+      if (aIsVacation && !bIsVacation) return 1;
+      if (!aIsVacation && bIsVacation) return -1;
+
+      // Both same type - sort by availability date
+      return a.availability_date.getTime() - b.availability_date.getTime();
+    });
   }
 
   /**

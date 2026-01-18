@@ -113,8 +113,9 @@ function displayExceptions(exceptions: AllocationException[]) {
     const row = tbody.insertRow();
 
     // Apply color coding based on exception type and availability
+    // VACATION exceptions have no color (default white background)
     if (exception.exception_type === 'VACATION') {
-      row.className = 'exception-vacation'; // Yellow - High vacation balance
+      // No className - default white background
     } else if (exception.exception_type === 'OVER') {
       row.className = 'exception-over'; // Red - Over-allocated
     } else if (exception.source_projects_or_clients.length > 0) {
