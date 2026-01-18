@@ -116,10 +116,17 @@ export class AllocationAnalyzer {
       // If fteDifference === 0, no exception (perfectly allocated)
     }
 
-    // Step 3: Merge contiguous intervals
-    const mergedExceptions = this.mergeContiguousExceptions(rawExceptions);
+    // Step 3: Transform UNDER exceptions to show preceding allocation period
+    const transformedExceptions = this.transformUnderExceptions(
+      rawExceptions,
+      allocations,
+      window
+    );
 
-    // Step 4: Resolve source names
+    // Step 4: Merge contiguous intervals
+    const mergedExceptions = this.mergeContiguousExceptions(transformedExceptions);
+
+    // Step 5: Resolve source names
     return mergedExceptions.map((ex) => ({
       ...ex,
       source_projects_or_clients: this.resolveSourceNames(
@@ -190,6 +197,74 @@ export class AllocationAnalyzer {
     }
 
     return { total, activeAllocations };
+  }
+
+  /**
+   * Transforms UNDER exceptions to show the preceding allocation period
+   * instead of the future under-allocated period
+   */
+  private transformUnderExceptions(
+    rawExceptions: RawException[],
+    allocations: Allocation[],
+    window: DateRange
+  ): RawException[] {
+    return rawExceptions.map((exception) => {
+      if (exception.exception_type === 'UNDER') {
+        // Find allocations that end just before this under-allocation period starts
+        const underStartDate = exception.exception_start_date;
+
+        const precedingAllocations = allocations.filter((a) => {
+          const endDate = a.end_date;
+          if (!endDate) return false; // Skip ongoing allocations
+
+          // Check if allocation ends the day before under-allocation starts
+          const dayAfterEnd = DateUtils.addDays(endDate, 1);
+          return DateUtils.isSameDay(dayAfterEnd, underStartDate);
+        });
+
+        if (precedingAllocations.length > 0) {
+          // Find the earliest start and latest end among preceding allocations
+          let earliestStart: Date | null = null;
+          let latestEnd: Date | null = null;
+
+          for (const allocation of precedingAllocations) {
+            const start = allocation.start_date || new Date(1900, 0, 1);
+            const end = allocation.end_date!; // We know it's not null from filter above
+
+            if (!earliestStart || DateUtils.compare(start, earliestStart) < 0) {
+              earliestStart = start;
+            }
+            if (!latestEnd || DateUtils.compare(end, latestEnd) > 0) {
+              latestEnd = end;
+            }
+          }
+
+          if (earliestStart && latestEnd) {
+            // Return intersection of allocation period with query window
+            const start =
+              DateUtils.compare(earliestStart, window.from) > 0
+                ? earliestStart
+                : window.from;
+            const end =
+              DateUtils.compare(latestEnd, window.to) < 0 ? latestEnd : window.to;
+
+            // Convert end to exclusive format (add 1 day) since finalizeException will subtract 1
+            const exclusiveEnd = DateUtils.addDays(end, 1);
+
+            return {
+              ...exception,
+              exception_start_date: start,
+              exception_end_date: exclusiveEnd,
+            };
+          }
+        } else {
+          // No preceding allocation found - person is already under-allocated
+          // Show from query start to query end (or keep original if it makes sense)
+          // Keep the original under-allocation period
+        }
+      }
+      return exception;
+    });
   }
 
   /**
