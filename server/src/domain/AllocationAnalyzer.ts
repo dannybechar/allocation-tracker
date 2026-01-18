@@ -120,7 +120,8 @@ export class AllocationAnalyzer {
     const transformedExceptions = this.transformUnderExceptions(
       rawExceptions,
       allocations,
-      window
+      window,
+      employee
     );
 
     // Step 4: Merge contiguous intervals
@@ -201,12 +202,14 @@ export class AllocationAnalyzer {
 
   /**
    * Transforms UNDER exceptions to show the preceding allocation period
-   * instead of the future under-allocated period
+   * instead of the future under-allocated period, but only if the employee
+   * was fully allocated during that period
    */
   private transformUnderExceptions(
     rawExceptions: RawException[],
     allocations: Allocation[],
-    window: DateRange
+    window: DateRange,
+    employee: Employee
   ): RawException[] {
     return rawExceptions.map((exception) => {
       if (exception.exception_type === 'UNDER') {
@@ -223,39 +226,49 @@ export class AllocationAnalyzer {
         });
 
         if (precedingAllocations.length > 0) {
-          // Find the earliest start and latest end among preceding allocations
-          let earliestStart: Date | null = null;
-          let latestEnd: Date | null = null;
+          // Calculate total allocation percentage
+          const totalAllocationPercent = precedingAllocations.reduce(
+            (sum, alloc) => sum + alloc.allocation_percent,
+            0
+          );
 
-          for (const allocation of precedingAllocations) {
-            const start = allocation.start_date || new Date(1900, 0, 1);
-            const end = allocation.end_date!; // We know it's not null from filter above
+          // Only transform if employee was fully allocated (within 1% tolerance)
+          if (Math.abs(totalAllocationPercent - employee.fte_percent) <= 1) {
+            // Find the earliest start and latest end among preceding allocations
+            let earliestStart: Date | null = null;
+            let latestEnd: Date | null = null;
 
-            if (!earliestStart || DateUtils.compare(start, earliestStart) < 0) {
-              earliestStart = start;
+            for (const allocation of precedingAllocations) {
+              const start = allocation.start_date || new Date(1900, 0, 1);
+              const end = allocation.end_date!; // We know it's not null from filter above
+
+              if (!earliestStart || DateUtils.compare(start, earliestStart) < 0) {
+                earliestStart = start;
+              }
+              if (!latestEnd || DateUtils.compare(end, latestEnd) > 0) {
+                latestEnd = end;
+              }
             }
-            if (!latestEnd || DateUtils.compare(end, latestEnd) > 0) {
-              latestEnd = end;
+
+            if (earliestStart && latestEnd) {
+              // Return intersection of allocation period with query window
+              const start =
+                DateUtils.compare(earliestStart, window.from) > 0
+                  ? earliestStart
+                  : window.from;
+              const end =
+                DateUtils.compare(latestEnd, window.to) < 0 ? latestEnd : window.to;
+
+              // Convert end to exclusive format (add 1 day) since finalizeException will subtract 1
+              const exclusiveEnd = DateUtils.addDays(end, 1);
+
+              return {
+                ...exception,
+                exception_start_date: start,
+                exception_end_date: exclusiveEnd,
+                source_allocations: precedingAllocations,
+              };
             }
-          }
-
-          if (earliestStart && latestEnd) {
-            // Return intersection of allocation period with query window
-            const start =
-              DateUtils.compare(earliestStart, window.from) > 0
-                ? earliestStart
-                : window.from;
-            const end =
-              DateUtils.compare(latestEnd, window.to) < 0 ? latestEnd : window.to;
-
-            // Convert end to exclusive format (add 1 day) since finalizeException will subtract 1
-            const exclusiveEnd = DateUtils.addDays(end, 1);
-
-            return {
-              ...exception,
-              exception_start_date: start,
-              exception_end_date: exclusiveEnd,
-            };
           }
         } else {
           // No preceding allocation found - person is already under-allocated
