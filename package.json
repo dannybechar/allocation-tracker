@@ -16,7 +16,11 @@
     "import-employees": "ts-node scripts/import-employees.ts",
     "export-employees": "ts-node scripts/export-employees.ts",
     "import-clients": "ts-node scripts/import-clients.ts",
+    "export-clients": "ts-node scripts/export-clients.ts",
     "import-projects": "ts-node scripts/import-projects.ts",
+    "export-projects": "ts-node scripts/export-projects.ts",
+    "export-allocations": "ts-node scripts/export-allocations.ts",
+    "export-exceptions": "ts-node scripts/export-exceptions.ts",
     "cleanup-test-data": "ts-node scripts/cleanup-test-data.ts"
   },
   "keywords": [
