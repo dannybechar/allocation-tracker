@@ -49,10 +49,19 @@ export class AllocationAnalyzer {
       exceptions.push(...employeeExceptions);
     }
 
-    // Sort by end date
-    exceptions.sort(
-      (a, b) => a.exception_end_date.getTime() - b.exception_end_date.getTime()
-    );
+    // Sort exceptions: full-window exceptions first (currently free employees),
+    // then by end date (employees who will become free soon)
+    exceptions.sort((a, b) => {
+      const aSpansFullWindow = this.spansApproximatelyFullWindow(a, input.fromDate, input.toDate);
+      const bSpansFullWindow = this.spansApproximatelyFullWindow(b, input.fromDate, input.toDate);
+
+      // Full-window exceptions (currently free) come first
+      if (aSpansFullWindow && !bSpansFullWindow) return -1;
+      if (!aSpansFullWindow && bSpansFullWindow) return 1;
+
+      // Both full-window or both partial: sort by end date
+      return a.exception_end_date.getTime() - b.exception_end_date.getTime();
+    });
 
     return exceptions;
   }
@@ -358,6 +367,28 @@ export class AllocationAnalyzer {
       ...exception,
       exception_end_date: adjustedEndDate,
     };
+  }
+
+  /**
+   * Checks if an exception spans approximately the full query window
+   * (indicating employee is currently free with no allocations)
+   */
+  private spansApproximatelyFullWindow(
+    exception: AllocationException,
+    windowStart: Date,
+    windowEnd: Date
+  ): boolean {
+    const startDiff = Math.abs(
+      exception.exception_start_date.getTime() - windowStart.getTime()
+    );
+    const endDiff = Math.abs(
+      exception.exception_end_date.getTime() - windowEnd.getTime()
+    );
+
+    // Allow 2 days tolerance on each end (in milliseconds)
+    const tolerance = 2 * 24 * 60 * 60 * 1000;
+
+    return startDiff <= tolerance && endDiff <= tolerance;
   }
 
   /**
