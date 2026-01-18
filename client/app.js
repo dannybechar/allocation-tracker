@@ -1,4 +1,3 @@
-"use strict";
 // State for caching data
 let employeesCache = [];
 let clientsCache = [];
@@ -181,6 +180,12 @@ async function loadEmployees() {
             billableCell.appendChild(checkbox);
             row.insertCell(3).textContent = `${employee.fte_percent}%`;
             row.insertCell(4).textContent = String(employee.vacation_days);
+            // Actions
+            const actionsCell = row.insertCell(5);
+            actionsCell.innerHTML = `
+        <button onclick="editEmployee(${employee.id})" style="padding: 5px 10px; margin-right: 5px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">Edit</button>
+        <button onclick="deleteEmployee(${employee.id})" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Delete</button>
+      `;
         });
         table.style.display = 'table';
     }
@@ -214,6 +219,112 @@ async function updateEmployeeBillable(employeeId, billable) {
         alert(`Error updating billable status: ${err.message}`);
         // Reload to revert the checkbox
         await loadEmployees();
+    }
+}
+// Show employee form
+function showEmployeeForm() {
+    const formContainer = document.getElementById('employeeFormContainer');
+    const formTitle = document.getElementById('employeeFormTitle');
+    const form = document.getElementById('employeeForm');
+    // Reset form
+    form.reset();
+    document.getElementById('employeeId').value = '';
+    document.getElementById('employeeBillable').checked = true;
+    formTitle.textContent = 'Add New Employee';
+    formContainer.style.display = 'block';
+}
+// Cancel employee form
+function cancelEmployeeForm() {
+    const formContainer = document.getElementById('employeeFormContainer');
+    formContainer.style.display = 'none';
+}
+// Save employee (create or update)
+async function saveEmployee(event) {
+    event.preventDefault();
+    const employeeId = document.getElementById('employeeId').value;
+    const name = document.getElementById('employeeName').value;
+    const ftePercent = Number(document.getElementById('employeeFtePercent').value);
+    const vacationDays = Number(document.getElementById('employeeVacationDays').value);
+    const billable = document.getElementById('employeeBillable').checked;
+    try {
+        const body = {
+            name,
+            fte_percent: ftePercent,
+            vacation_days: vacationDays,
+            billable,
+        };
+        let response;
+        if (employeeId) {
+            // Update existing
+            response = await fetch(`/api/employees/${employeeId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+        }
+        else {
+            // Create new
+            response = await fetch('/api/employees', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+        }
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to save employee');
+        }
+        // Hide form and reload employees
+        cancelEmployeeForm();
+        await loadEmployees();
+    }
+    catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+// Edit employee
+async function editEmployee(id) {
+    const formContainer = document.getElementById('employeeFormContainer');
+    const formTitle = document.getElementById('employeeFormTitle');
+    try {
+        // Fetch current employees if not cached
+        if (employeesCache.length === 0) {
+            const response = await fetch('/api/employees');
+            employeesCache = await response.json();
+        }
+        const employee = employeesCache.find((e) => e.id === id);
+        if (!employee) {
+            throw new Error('Employee not found');
+        }
+        // Populate form
+        document.getElementById('employeeId').value = String(employee.id);
+        document.getElementById('employeeName').value = employee.name;
+        document.getElementById('employeeFtePercent').value = String(employee.fte_percent);
+        document.getElementById('employeeVacationDays').value = String(employee.vacation_days);
+        document.getElementById('employeeBillable').checked = employee.billable;
+        formTitle.textContent = 'Edit Employee';
+        formContainer.style.display = 'block';
+    }
+    catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+// Delete employee
+async function deleteEmployee(id) {
+    if (!confirm('Are you sure you want to delete this employee?')) {
+        return;
+    }
+    try {
+        const response = await fetch(`/api/employees/${id}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            throw new Error('Failed to delete employee');
+        }
+        await loadEmployees();
+    }
+    catch (err) {
+        alert('Error: ' + err.message);
     }
 }
 // Load clients
@@ -677,6 +788,11 @@ window.cancelAllocationForm = cancelAllocationForm;
 window.saveAllocation = saveAllocation;
 window.editAllocation = editAllocation;
 window.deleteAllocation = deleteAllocation;
+window.showEmployeeForm = showEmployeeForm;
+window.cancelEmployeeForm = cancelEmployeeForm;
+window.saveEmployee = saveEmployee;
+window.editEmployee = editEmployee;
+window.deleteEmployee = deleteEmployee;
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     initializeDates();

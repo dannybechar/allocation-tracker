@@ -121,6 +121,17 @@ export class AllocationService {
   }
 
   /**
+   * Delete an employee
+   */
+  async deleteEmployee(id: number): Promise<void> {
+    const existing = await this.employeeRepo.findById(id);
+    if (!existing) {
+      throw new Error(`Employee with id ${id} not found`);
+    }
+    return this.employeeRepo.delete(id);
+  }
+
+  /**
    * Create a new allocation
    */
   async createAllocation(

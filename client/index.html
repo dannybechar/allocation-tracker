@@ -278,6 +278,53 @@
     <div id="employeesLoading" class="loading" style="display: none;">Loading employees...</div>
     <div id="employeesError" class="error" style="display: none;"></div>
     <div id="employeesNoData" class="no-data" style="display: none;">No employees found.</div>
+    <div style="margin-bottom: 20px;">
+      <button id="addEmployeeBtn" onclick="showEmployeeForm()" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+        + Add Employee
+      </button>
+    </div>
+
+    <div id="employeeFormContainer" style="display: none; margin-bottom: 20px; padding: 20px; background-color: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 id="employeeFormTitle">Add New Employee</h3>
+      <form id="employeeForm" onsubmit="saveEmployee(event)">
+        <input type="hidden" id="employeeId" value="">
+
+        <div style="margin-bottom: 15px;">
+          <label for="employeeName" style="display: block; margin-bottom: 5px; font-weight: bold;">Name:</label>
+          <input type="text" id="employeeName" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label for="employeeFtePercent" style="display: block; margin-bottom: 5px; font-weight: bold;">FTE %:</label>
+          <input type="number" id="employeeFtePercent" required min="0" max="100" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label for="employeeVacationDays" style="display: block; margin-bottom: 5px; font-weight: bold;">Vacation Days:</label>
+          <input type="number" id="employeeVacationDays" required min="0" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: flex; align-items: center; font-weight: bold;">
+            <input type="checkbox" id="employeeBillable" style="margin-right: 8px; width: 18px; height: 18px;">
+            Billable
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Save
+          </button>
+          <button type="button" onclick="cancelEmployeeForm()" style="padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="employeesLoading" class="loading" style="display: none;">Loading employees...</div>
+    <div id="employeesError" class="error" style="display: none;"></div>
+    <div id="employeesNoData" class="no-data" style="display: none;">No employees found.</div>
     <table id="employeesTable" style="display: none;">
       <thead>
         <tr>
@@ -286,6 +333,7 @@
           <th>Billable</th>
           <th>FTE %</th>
           <th>Vacation Days</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="employeesBody">
