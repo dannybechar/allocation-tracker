@@ -5,6 +5,7 @@ interface AllocationException {
   exception_end_date: string;
   free_or_excess_percent: number;
   source_projects_or_clients: string[];
+  availability_date: string;
 }
 
 interface Employee {
@@ -114,10 +115,9 @@ function displayExceptions(exceptions: AllocationException[]) {
 
     row.insertCell(0).textContent = exception.employee_name;
     row.insertCell(1).textContent = exception.exception_type;
-    row.insertCell(2).textContent = exception.exception_start_date;
-    row.insertCell(3).textContent = exception.exception_end_date;
-    row.insertCell(4).textContent = `${exception.free_or_excess_percent}%`;
-    row.insertCell(5).textContent = exception.source_projects_or_clients.join(', ') || '-';
+    row.insertCell(2).textContent = exception.availability_date;
+    row.insertCell(3).textContent = `${exception.free_or_excess_percent}%`;
+    row.insertCell(4).textContent = exception.source_projects_or_clients.join(', ') || '-';
   });
 }
 

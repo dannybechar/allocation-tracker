@@ -47,6 +47,7 @@ export interface AllocationException {
   exception_end_date: Date;
   free_or_excess_percent: number;
   source_projects_or_clients: string[]; // Human-readable names
+  availability_date: Date; // When employee becomes/is available (end_date for allocated, start_date for free)
 }
 
 // Input for analyzer

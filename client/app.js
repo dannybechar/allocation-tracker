@@ -62,10 +62,9 @@ function displayExceptions(exceptions) {
             exception.exception_type === 'UNDER' ? 'exception-under' : 'exception-over';
         row.insertCell(0).textContent = exception.employee_name;
         row.insertCell(1).textContent = exception.exception_type;
-        row.insertCell(2).textContent = exception.exception_start_date;
-        row.insertCell(3).textContent = exception.exception_end_date;
-        row.insertCell(4).textContent = `${exception.free_or_excess_percent}%`;
-        row.insertCell(5).textContent = exception.source_projects_or_clients.join(', ') || '-';
+        row.insertCell(2).textContent = exception.availability_date;
+        row.insertCell(3).textContent = `${exception.free_or_excess_percent}%`;
+        row.insertCell(4).textContent = exception.source_projects_or_clients.join(', ') || '-';
     });
 }
 function showLoading() {

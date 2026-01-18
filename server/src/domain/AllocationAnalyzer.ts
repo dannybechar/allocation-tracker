@@ -63,7 +63,13 @@ export class AllocationAnalyzer {
       return a.exception_end_date.getTime() - b.exception_end_date.getTime();
     });
 
-    return exceptions;
+    // Add availability_date to each exception
+    return exceptions.map(exception => ({
+      ...exception,
+      availability_date: this.spansApproximatelyFullWindow(exception, input.fromDate, input.toDate)
+        ? exception.exception_start_date  // Already free as of window start
+        : exception.exception_end_date    // Will be free at end date
+    }));
   }
 
   /**
@@ -136,7 +142,8 @@ export class AllocationAnalyzer {
     // Step 4: Merge contiguous intervals
     const mergedExceptions = this.mergeContiguousExceptions(transformedExceptions);
 
-    // Step 5: Resolve source names
+    // Step 5: Resolve source names and add temporary availability_date
+    // (will be overwritten in analyze() method)
     return mergedExceptions.map((ex) => ({
       ...ex,
       source_projects_or_clients: this.resolveSourceNames(
@@ -144,6 +151,7 @@ export class AllocationAnalyzer {
         clients,
         projects
       ),
+      availability_date: ex.exception_end_date, // Temporary, will be recalculated
     }));
   }
 
