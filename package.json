@@ -20,6 +20,7 @@
     "import-projects": "ts-node scripts/import-projects.ts",
     "export-projects": "ts-node scripts/export-projects.ts",
     "import-vacation-days": "ts-node scripts/import-vacation-days.ts",
+    "import-all": "ts-node scripts/import-all.ts",
     "export-allocations": "ts-node scripts/export-allocations.ts",
     "export-exceptions": "ts-node scripts/export-exceptions.ts",
     "export-all": "ts-node scripts/export-all.ts",

@@ -9,6 +9,7 @@ import { AllocationAnalyzer } from './domain/AllocationAnalyzer';
 import { AllocationService } from './services/AllocationService';
 import { createAllocationRoutes } from './api/allocationRoutes';
 import { exportAll } from './utils/exportUtils';
+import { importAll } from './utils/importUtils';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,35 +18,51 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../client')));
 
-// Initialize database and repositories
-const db = createDatabase('./allocation_tracker.db');
-const employeeRepo = new EmployeeRepository(db);
-const allocationRepo = new AllocationRepository(db);
-const clientRepo = new ClientRepository(db);
-const projectRepo = new ProjectRepository(db);
+let db: any;
 
-// Initialize domain and service
-const analyzer = new AllocationAnalyzer();
-const service = new AllocationService(
-  employeeRepo,
-  allocationRepo,
-  clientRepo,
-  projectRepo,
-  analyzer
-);
+// Async startup function
+async function startServer() {
+  try {
+    // Import data from Excel files before initializing database
+    await importAll();
 
-// Routes
-app.use('/api', createAllocationRoutes(service));
+    // Initialize database and repositories
+    db = createDatabase('./allocation_tracker.db');
+    const employeeRepo = new EmployeeRepository(db);
+    const allocationRepo = new AllocationRepository(db);
+    const clientRepo = new ClientRepository(db);
+    const projectRepo = new ProjectRepository(db);
 
-// Serve frontend
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../client/index.html'));
-});
+    // Initialize domain and service
+    const analyzer = new AllocationAnalyzer();
+    const service = new AllocationService(
+      employeeRepo,
+      allocationRepo,
+      clientRepo,
+      projectRepo,
+      analyzer
+    );
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Allocation Tracker running on http://localhost:${PORT}`);
-});
+    // Routes
+    app.use('/api', createAllocationRoutes(service));
+
+    // Serve frontend
+    app.get('/', (req, res) => {
+      res.sendFile(path.join(__dirname, '../../client/index.html'));
+    });
+
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`Allocation Tracker running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
 
 // Graceful shutdown handler
 async function gracefulShutdown(signal: string) {
