@@ -464,56 +464,54 @@ async function loadAllocations() {
         tbody.innerHTML = '';
         // Get only billable employees
         const billableEmployees = employeesCache.filter((e) => e.billable);
-        if (billableEmployees.length === 0) {
-            noData.style.display = 'block';
-            return;
-        }
-        // Group allocations by employee
-        const allocationsByEmployee = new Map();
-        allocations.forEach((allocation) => {
-            if (!allocationsByEmployee.has(allocation.employee_id)) {
-                allocationsByEmployee.set(allocation.employee_id, []);
-            }
-            allocationsByEmployee.get(allocation.employee_id).push(allocation);
-        });
-        // Display each billable employee
-        billableEmployees.forEach((employee) => {
-            const employeeAllocations = allocationsByEmployee.get(employee.id) || [];
-            if (employeeAllocations.length > 0) {
-                // Employee has allocations - show them
-                employeeAllocations.forEach((allocation) => {
-                    const row = tbody.insertRow();
-                    // Employee name
-                    row.insertCell(0).textContent = employee.name;
-                    // Target type
-                    row.insertCell(1).textContent = allocation.target_type;
-                    // Target name
-                    let targetName = '';
-                    if (allocation.target_type === 'CLIENT') {
-                        const client = clientsCache.find((c) => c.id === allocation.target_id);
-                        targetName = client ? client.name : `ID ${allocation.target_id}`;
-                    }
-                    else {
-                        const project = projectsCache.find((p) => p.id === allocation.target_id);
-                        targetName = project ? project.name : `ID ${allocation.target_id}`;
-                    }
-                    row.insertCell(2).textContent = targetName;
-                    // Allocation %
-                    row.insertCell(3).textContent = `${allocation.allocation_percent}%`;
-                    // Start date
-                    row.insertCell(4).textContent = allocation.start_date || 'Indefinite';
-                    // End date
-                    row.insertCell(5).textContent = allocation.end_date || 'Ongoing';
-                    // Actions
-                    const actionsCell = row.insertCell(6);
-                    actionsCell.innerHTML = `
+        const billableEmployeeIds = new Set(billableEmployees.map(e => e.id));
+        // Filter allocations to only show billable employees
+        const billableAllocations = allocations.filter(a => billableEmployeeIds.has(a.employee_id));
+        // Display allocations in sorted order
+        if (billableAllocations.length > 0) {
+            billableAllocations.forEach((allocation) => {
+                const employee = employeesCache.find(e => e.id === allocation.employee_id);
+                if (!employee)
+                    return;
+                const row = tbody.insertRow();
+                // Employee name
+                row.insertCell(0).textContent = employee.name;
+                // Target type
+                row.insertCell(1).textContent = allocation.target_type;
+                // Target name
+                let targetName = '';
+                if (allocation.target_type === 'CLIENT') {
+                    const client = clientsCache.find((c) => c.id === allocation.target_id);
+                    targetName = client ? client.name : `ID ${allocation.target_id}`;
+                }
+                else {
+                    const project = projectsCache.find((p) => p.id === allocation.target_id);
+                    targetName = project ? project.name : `ID ${allocation.target_id}`;
+                }
+                row.insertCell(2).textContent = targetName;
+                // Allocation %
+                row.insertCell(3).textContent = `${allocation.allocation_percent}%`;
+                // Start date
+                row.insertCell(4).textContent = allocation.start_date || 'Indefinite';
+                // End date
+                row.insertCell(5).textContent = allocation.end_date || 'Ongoing';
+                // Actions
+                const actionsCell = row.insertCell(6);
+                actionsCell.innerHTML = `
             <button onclick="editAllocation(${allocation.id})" style="padding: 5px 10px; margin-right: 5px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">Edit</button>
             <button onclick="deleteAllocation(${allocation.id})" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Delete</button>
           `;
-                });
-            }
-            else {
-                // Employee has no allocations - show placeholder row
+            });
+        }
+        else {
+            // No allocations found for billable employees
+            noData.style.display = 'block';
+            return;
+        }
+        // Show placeholder rows for billable employees without allocations
+        const employeesWithAllocations = new Set(billableAllocations.map(a => a.employee_id));
+        billableEmployees.forEach((employee) => {
+            if (!employeesWithAllocations.has(employee.id)) {
                 const row = tbody.insertRow();
                 row.style.backgroundColor = '#f8f9fa';
                 // Employee name

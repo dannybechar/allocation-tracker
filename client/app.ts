@@ -569,28 +569,16 @@ async function loadAllocations() {
 
     // Get only billable employees
     const billableEmployees = employeesCache.filter((e) => e.billable);
+    const billableEmployeeIds = new Set(billableEmployees.map(e => e.id));
 
-    if (billableEmployees.length === 0) {
-      noData.style.display = 'block';
-      return;
-    }
+    // Filter allocations to only show billable employees
+    const billableAllocations = allocations.filter(a => billableEmployeeIds.has(a.employee_id));
 
-    // Group allocations by employee
-    const allocationsByEmployee = new Map<number, Allocation[]>();
-    allocations.forEach((allocation) => {
-      if (!allocationsByEmployee.has(allocation.employee_id)) {
-        allocationsByEmployee.set(allocation.employee_id, []);
-      }
-      allocationsByEmployee.get(allocation.employee_id)!.push(allocation);
-    });
-
-    // Display each billable employee
-    billableEmployees.forEach((employee) => {
-      const employeeAllocations = allocationsByEmployee.get(employee.id) || [];
-
-      if (employeeAllocations.length > 0) {
-        // Employee has allocations - show them
-        employeeAllocations.forEach((allocation) => {
+    // Display allocations in sorted order
+    if (billableAllocations.length > 0) {
+      billableAllocations.forEach((allocation) => {
+        const employee = employeesCache.find(e => e.id === allocation.employee_id);
+        if (!employee) return;
           const row = tbody.insertRow();
 
           // Employee name
@@ -625,9 +613,17 @@ async function loadAllocations() {
             <button onclick="editAllocation(${allocation.id})" style="padding: 5px 10px; margin-right: 5px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">Edit</button>
             <button onclick="deleteAllocation(${allocation.id})" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Delete</button>
           `;
-        });
-      } else {
-        // Employee has no allocations - show placeholder row
+      });
+    } else {
+      // No allocations found for billable employees
+      noData.style.display = 'block';
+      return;
+    }
+
+    // Show placeholder rows for billable employees without allocations
+    const employeesWithAllocations = new Set(billableAllocations.map(a => a.employee_id));
+    billableEmployees.forEach((employee) => {
+      if (!employeesWithAllocations.has(employee.id)) {
         const row = tbody.insertRow();
         row.style.backgroundColor = '#f8f9fa';
 
