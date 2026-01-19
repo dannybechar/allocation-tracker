@@ -8,6 +8,7 @@ import { ProjectRepository } from './repositories/ProjectRepository';
 import { AllocationAnalyzer } from './domain/AllocationAnalyzer';
 import { AllocationService } from './services/AllocationService';
 import { createAllocationRoutes } from './api/allocationRoutes';
+import { exportAll } from './utils/exportUtils';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,8 +47,23 @@ app.listen(PORT, () => {
   console.log(`Allocation Tracker running on http://localhost:${PORT}`);
 });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
+// Graceful shutdown handler
+async function gracefulShutdown(signal: string) {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+
+  try {
+    // Export database to Excel files before shutting down
+    await exportAll();
+  } catch (error) {
+    console.error('Error during export on shutdown:', error);
+  }
+
+  // Close database connection
   db.close();
+  console.log('Database closed. Exiting...');
   process.exit(0);
-});
+}
+
+// Register shutdown handlers
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

@@ -22,6 +22,7 @@
     "import-vacation-days": "ts-node scripts/import-vacation-days.ts",
     "export-allocations": "ts-node scripts/export-allocations.ts",
     "export-exceptions": "ts-node scripts/export-exceptions.ts",
+    "export-all": "ts-node scripts/export-all.ts",
     "cleanup-test-data": "ts-node scripts/cleanup-test-data.ts"
   },
   "keywords": [
