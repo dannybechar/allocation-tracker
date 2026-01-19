@@ -11,6 +11,9 @@ dist/
 *.sqlite
 *.sqlite3
 
+# One-time import files (not part of application data)
+data/יתרות חופשה.xlsx
+
 # Environment variables
 .env
 .env.local

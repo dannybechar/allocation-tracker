@@ -1,7 +1,9 @@
 /**
  * Import Vacation Days Script
  *
- * Imports vacation days from יתרות חופשה.xlsx and updates employees
+ * ONE-TIME IMPORT: Imports vacation days from יתרות חופשה.xlsx and updates employees
+ * This script is for initial data migration only.
+ * Going forward, vacation days should be maintained through the web application.
  */
 
 import * as XLSX from 'xlsx';

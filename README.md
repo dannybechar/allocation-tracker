@@ -53,44 +53,39 @@ cd allocation-tracker
 npm install
 ```
 
-### Step 3: Initialize Database with Existing Data
+### Step 3: Prepare Excel Data Files
 
-The repository includes Excel files in the `data/` directory with current production data. Import them in this order:
+The repository includes Excel files in the `data/` directory with production data:
+- `employees.xlsx` - Employee records with FTE%, vacation days, and billable status
+- `clients.xlsx` - Client records
+- `projects.xlsx` - Project records
+- `allocations.xlsx` - Allocation records
 
-```bash
-# Import employees (92 employees: 42 billable, 50 non-billable)
-npm run import-employees
+**Important**: The database is automatically populated from these Excel files on every server startup.
 
-# Import clients (248 clients)
-npm run import-clients
-
-# Import projects (93 projects)
-npm run import-projects
-```
-
-**Note**: Allocations are managed through the GUI, not imported from Excel.
-
-### Step 4: Build the Application
+### Step 4: Build and Start the Application
 
 ```bash
-# Build server TypeScript
+# Build TypeScript
 npm run build
 
 # Build client TypeScript
-cd client && npx tsc && cd ..
-```
+npx tsc client/app.ts --target ES2020 --lib ES2020,DOM --outDir client --skipLibCheck
 
-### Step 5: Start the Application
-
-```bash
-# For development (with auto-restart)
+# Start the server (imports data automatically)
 npm run dev
-
-# For production
-npm start
 ```
 
 The application will be available at: **http://localhost:3000**
+
+**What happens on startup:**
+- Database is truncated (all tables cleared)
+- Data is imported from Excel files in `data/` directory
+- Server starts with fresh data from Excel
+
+**What happens on shutdown:**
+- Current database state is exported to Excel files
+- Excel files are updated with latest data
 
 ## Using the Application
 
@@ -128,35 +123,27 @@ Navigate to `http://localhost:3000` in your browser.
 
 #### Import Scripts
 
-Import data from Excel files in the `data/` directory:
+**Automatic Data Management:**
+- **On Startup**: Database is automatically imported from Excel files (see Step 4 above)
+- **On Shutdown**: Database is automatically exported to Excel files
+
+**Manual Import/Export (Optional):**
+
+If you need to manually import or export data:
 
 ```bash
+# Import all data at once (truncates database and imports from Excel)
+npm run import-all
+
+# Export all data at once
+npm run export-all
+
+# Individual imports (legacy scripts - not needed with automatic import)
 npm run import-employees    # Import from data/employees.xlsx
 npm run import-clients      # Import from data/clients.xlsx
 npm run import-projects     # Import from data/projects.xlsx
-```
 
-**Employee Excel Format** (`data/employees.xlsx`):
-- Column A: ID (employee ID number)
-- Column D: Name (full employee name)
-- Column G: FTE (percentage 0-100)
-- Column H: VacationDays (decimal allowed, e.g., 2.5)
-- Column I: Billable (1 for billable, 0 for non-billable)
-
-**Client Excel Format** (`data/clients.xlsx`):
-- Column A: ID (client ID number)
-- Column B: Name
-
-**Project Excel Format** (`data/projects.xlsx`):
-- Column A: ID (project ID number)
-- Column B: Name
-- Column C: ClientID (optional - can be blank)
-
-#### Export Scripts
-
-Export current database to Excel files:
-
-```bash
+# Individual exports (legacy scripts - not needed with automatic export)
 npm run export-employees     # Export to data/employees.xlsx
 npm run export-clients       # Export to data/clients.xlsx
 npm run export-projects      # Export to data/projects.xlsx
@@ -164,7 +151,21 @@ npm run export-allocations   # Export to data/allocations.xlsx
 npm run export-exceptions    # Export to data/exceptions.xlsx
 ```
 
-**Note**: The exported Excel files reflect the current state of the database.
+**Excel File Formats:**
+
+`data/employees.xlsx`:
+- ID, Name, FTE, VacationDays, Billable
+
+`data/clients.xlsx`:
+- ID, Name
+
+`data/projects.xlsx`:
+- ID, Name, Client
+
+`data/allocations.xlsx`:
+- ID, EmployeeName, TargetType, TargetName, AllocationPercent, StartDate, EndDate
+
+**Note**: Vacation days are maintained through the web application. The one-time vacation import script (`import-vacation-days`) should not be used for ongoing operations.
 
 ## Database Schema
 
