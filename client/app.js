@@ -446,6 +446,20 @@ async function loadAllocations() {
         employeesCache = await employeesRes.json();
         clientsCache = await clientsRes.json();
         projectsCache = await projectsRes.json();
+        // Sort allocations by end_date (ascending), with null/ongoing at the end
+        allocations.sort((a, b) => {
+            // If both have no end date, maintain order
+            if (!a.end_date && !b.end_date)
+                return 0;
+            // If a has no end date, put it after b
+            if (!a.end_date)
+                return 1;
+            // If b has no end date, put it after a
+            if (!b.end_date)
+                return -1;
+            // Both have end dates, sort ascending
+            return a.end_date.localeCompare(b.end_date);
+        });
         // Clear existing rows
         tbody.innerHTML = '';
         // Get only billable employees
