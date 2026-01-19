@@ -566,6 +566,7 @@ async function showAllocationForm() {
     // Populate employee dropdown
     const employeeSelect = document.getElementById('employeeSelect');
     employeeSelect.innerHTML = '<option value="">Select Employee</option>';
+    employeeSelect.disabled = false; // Enable for new allocation
     employeesCache.forEach((employee) => {
         const option = document.createElement('option');
         option.value = String(employee.id);
@@ -609,6 +610,7 @@ async function addAllocationForEmployee(employeeId) {
     });
     // Pre-select the employee
     employeeSelect.value = String(employeeId);
+    employeeSelect.disabled = true; // Disable since this is for a specific employee
     // Pre-fill allocation percent with employee's FTE%
     const employee = employeesCache.find((e) => e.id === employeeId);
     if (employee) {
@@ -757,6 +759,8 @@ async function editAllocation(id) {
         // Populate form
         document.getElementById('allocationId').value = String(allocation.id);
         employeeSelect.value = String(allocation.employee_id);
+        // Disable employee field when editing (employee shouldn't change for existing allocation)
+        employeeSelect.disabled = true;
         // Set target type and populate target dropdown
         const targetTypeRadio = document.querySelector(`input[name="targetType"][value="${allocation.target_type}"]`);
         if (targetTypeRadio) {
